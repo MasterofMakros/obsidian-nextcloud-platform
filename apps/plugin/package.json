@@ -1,0 +1,21 @@
+{
+    "name": "obsidian-nextcloud-media-plugin",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Obsidian Nextcloud Media Plugin",
+    "main": "main.js",
+    "scripts": {
+        "dev": "tsc -w",
+        "build": "tsc"
+    },
+    "dependencies": {
+        "@noble/ed25519": "^2.0.0",
+        "obsidian": "^1.4.0",
+        "@onm/design-tokens": "workspace:*"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0",
+        "@types/node": "^20.0.0",
+        "tslib": "^2.0.0"
+    }
+}

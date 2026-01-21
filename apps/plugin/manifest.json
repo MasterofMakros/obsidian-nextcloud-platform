@@ -1,0 +1,10 @@
+{
+    "id": "obsidian-nextcloud-media",
+    "name": "Nextcloud Media",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Seamlessly sync media between Obsidian and Nextcloud.",
+    "author": "MasterofMakros",
+    "authorUrl": "https://github.com/MasterofMakros",
+    "isDesktopOnly": false
+}
