@@ -1,0 +1,100 @@
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    gap: var(--spacing-xl);
+}
+
+.title {
+    font-size: 2.5rem;
+    color: var(--color-text-normal);
+    margin-bottom: var(--spacing-lg);
+}
+
+.grid {
+    display: flex;
+    gap: var(--spacing-lg);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.card {
+    background-color: var(--color-background-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: left;
+}
+
+.cardPro {
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 20px rgba(122, 99, 168, 0.2);
+}
+
+.planName {
+    font-size: var(--typography-size-xl);
+    font-weight: var(--typography-weight-bold);
+    color: var(--color-text-normal);
+}
+
+.planNamePro {
+    color: var(--color-brand-primary);
+}
+
+.price {
+    font-size: 3rem;
+    font-weight: var(--typography-weight-bold);
+    color: var(--color-text-normal);
+}
+
+.period {
+    font-size: var(--typography-size-base);
+    color: var(--color-text-muted);
+    font-weight: var(--typography-weight-regular);
+}
+
+.features {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-md) 0;
+    flex-grow: 1;
+}
+
+.features li {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+}
+
+.features li::before {
+    content: "•";
+    color: var(--color-brand-secondary);
+    margin-right: var(--spacing-sm);
+}
+
+.btnPrimary {
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-onAccent);
+    border: none;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: var(--typography-weight-bold);
+}
+
+.btnSecondary {
+    background-color: transparent;
+    color: var(--color-text-normal);
+    border: 1px solid var(--color-border-subtle);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}

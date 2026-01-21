@@ -1,0 +1,89 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - onm-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: onm-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-obsidian_media}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - onm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: onm-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - onm-network
+
+  # Applications (Uncomment when Dockerfiles are ready)
+  # api:
+  #   build:
+  #     context: ../
+  #     dockerfile: apps/api/Dockerfile
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/obsidian_media
+  #     - REDIS_URL=redis://redis:6379
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   networks:
+  #     - onm-network
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+  
+  # worker:
+  #   build:
+  #     context: ../
+  #     dockerfile: apps/worker/Dockerfile
+  #   environment:
+  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/obsidian_media
+  #     - REDIS_URL=redis://redis:6379
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
+  #   networks:
+  #     - onm-network
+
+networks:
+  onm-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

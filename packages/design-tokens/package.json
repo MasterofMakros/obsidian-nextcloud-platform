@@ -1,0 +1,13 @@
+{
+    "name": "@onm/design-tokens",
+    "version": "1.0.0",
+    "private": true,
+    "files": [
+        "dist"
+    ],
+    "main": "dist/tokens.json",
+    "style": "dist/variables.css",
+    "scripts": {
+        "build": "node build.js"
+    }
+}
