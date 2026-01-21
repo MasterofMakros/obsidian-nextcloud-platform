@@ -4,7 +4,9 @@
     "private": true,
     "scripts": {
         "generate": "prisma generate",
-        "db:push": "prisma db push"
+        "db:push": "prisma db push",
+        "migrate:dev": "prisma migrate dev",
+        "migrate:deploy": "prisma migrate deploy"
     },
     "dependencies": {
         "@prisma/client": "^5.10.0"

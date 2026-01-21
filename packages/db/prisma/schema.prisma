@@ -9,8 +9,16 @@ datasource db {
 
 enum LicenseStatus {
   ACTIVE
+  PAST_DUE
+  GRACE
   REVOKED
   EXPIRED
+}
+
+enum LicensePlan {
+  FREE
+  PRO
+  LIFETIME
 }
 
 enum PaymentEventStatus {
@@ -34,10 +42,20 @@ model License {
   publicKey       String        @unique 
   // Hashed private key for issuance (never stored in plaintext)
   hashedKey       String
+  keyVersion      Int           @default(1)
+  
   userId          String
   status          LicenseStatus @default(ACTIVE)
-  features        Json          // e.g. ["4k-streaming", "priority-support"]
+  plan            LicensePlan   @default(PRO)
+  
+  stripeSubscriptionId String?
+
+  features        Json          // e.g. ["4k-streaming"]
+  deviceIdHashes  String[]      // List of authorized device hashes
+  
   expiresAt       DateTime?
+  graceEndsAt     DateTime?
+  
   lastValidatedAt DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -48,7 +66,7 @@ model License {
 model PaymentEvent {
   id        String             @id @default(uuid())
   stripeId  String             @unique
-  type      String             // e.g. "checkout.session.completed"
+  type      String             // e.g. "checkout.session.completed", "invoice.payment_failed"
   payload   Json
   status    PaymentEventStatus @default(PENDING)
   createdAt DateTime           @default(now())

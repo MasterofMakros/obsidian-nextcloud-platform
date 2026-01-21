@@ -22,10 +22,19 @@ await fastify.register(rateLimit, {
 });
 
 await fastify.register(cors, {
-    origin: '*', // TODO: Lock down in production
+    origin: '*', // TODO: Allowlist
 });
 
 await fastify.register(sensible);
+
+// Register Routes
+import { licenseRoutes } from './routes/license';
+import { stripeRoutes } from './routes/stripe';
+
+await fastify.register(licenseRoutes);
+await fastify.register(stripeRoutes);
+
+
 
 // Health Check
 fastify.get('/health', async () => {

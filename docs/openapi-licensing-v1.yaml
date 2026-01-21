@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Obsidian Nextcloud Media – Licensing & Billing API
+  version: "1.0.0"
+  description: >
+    Commercial licensing API for obsidian-nextcloud-media.
+    Offline-first licensing with Ed25519 signed tokens and Stripe-based subscriptions.
+servers:
+  - url: https://api.example.com/v1
+
+components:
+  securitySchemes:
+    AdminApiKey:
+      type: apiKey
+      in: header
+      name: X-ADMIN-API-KEY
+
+  schemas:
+    LicenseStatus:
+      type: string
+      enum: [active, past_due, grace, revoked, expired]
+
+    LicensePlan:
+      type: string
+      enum: [free, pro, lifetime]
+
+    LicenseToken:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Ed25519 signed JWT/PASETO
+        expiresAt:
+          type: string
+          format: date-time
+        plan:
+          $ref: "#/components/schemas/LicensePlan"
+        status:
+          $ref: "#/components/schemas/LicenseStatus"
+        graceDaysLeft:
+          type: integer
+          minimum: 0
+
+    LicenseRefreshRequest:
+      type: object
+      required: [token, deviceIdHash]
+      properties:
+        token:
+          type: string
+        deviceIdHash:
+          type: string
+
+    LicenseActivateRequest:
+      type: object
+      required: [licenseKey, deviceIdHash]
+      properties:
+        licenseKey:
+          type: string
+        deviceIdHash:
+          type: string
+
+  x-stripe-events:
+    - checkout.session.completed
+    - customer.subscription.updated
+    - customer.subscription.deleted
+    - invoice.paid
+    - invoice.payment_failed
+
+  x-grace-policy:
+    duration_days: 14
+    behavior:
+      - access_allowed: true
+      - refresh_allowed: true
+      - activation_allowed: false
+
+paths:
+  /license/activate:
+    post:
+      summary: Activate license on a device
+      operationId: activateLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LicenseActivateRequest"
+      responses:
+        "200":
+          description: License activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseToken"
+        "403":
+          description: Activation limit reached or license revoked
+
+  /license/refresh:
+    post:
+      summary: Refresh license token
+      operationId: refreshLicense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LicenseRefreshRequest"
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseToken"
+        "401":
+          description: Token invalid or revoked
+
+  /admin/license/revoke:
+    post:
+      summary: Revoke a license immediately
+      security:
+        - AdminApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [licenseId, reason]
+              properties:
+                licenseId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        "204":
+          description: License revoked
+
+  /stripe/webhook:
+    post:
+      summary: Stripe webhook receiver
+      operationId: stripeWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Event accepted
+        "400":
+          description: Invalid signature
