@@ -7,12 +7,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [20.x]
-
     steps:
     - uses: actions/checkout@v4
     
@@ -21,35 +17,53 @@ jobs:
       with:
         version: 9
         
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 20
         cache: 'pnpm'
-        
+
     - name: Install Dependencies
       run: pnpm install
-      
+
+    - name: Install Playwright Browsers
+      run: pnpm --filter web exec playwright install --with-deps
+
     - name: Generate Prisma Client
       run: pnpm --filter @onm/db generate
-      
-    - name: Build All
-      run: pnpm -r build
-      
+
+    # 1. Static Analysis
     - name: Lint
       run: pnpm -r lint
+      
+    - name: Typecheck
+      # Ensure all packages have a typecheck script or run tsc directly if simple
+      run: pnpm -r run typecheck --if-present
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - uses: actions/checkout@v4
-    - uses: pnpm/action-setup@v3
-      with: { version: 9 }
-    - uses: actions/setup-node@v4
-      with: { node-version: 20, cache: 'pnpm' }
-    - run: pnpm install
-    - run: pnpm --filter @onm/db generate
-    
-    # Ideally run 'pnpm test' here for unit tests
-    # - run: pnpm -r test
+    # 2. Unit Tests
+    - name: Unit Tests
+      run: pnpm -r test --if-present
+
+    # 3. Integration Infrastructure
+    - name: Start Infrastructure
+      run: docker compose -f infra/docker-compose.yml up -d
+      
+    - name: Wait for Healthchecks
+      run: |
+        timeout 60s sh -c 'until docker ps | grep onm-postgres | grep "(healthy)"; do sleep 1; done'
+        # In a real scenario, we would also wait for API/Web health if built. 
+        # For CI speed, we might build locally or use prebuilt images. 
+        # Here we assume just DB/Redis for integration tests unless we build full images.
+        
+    # 4. E2E Tests
+    - name: Run E2E Tests
+      # Note: This requires the web app to be running. 
+      # Since we didn't build the docker image for web in this step (to save time),
+      # we run the web app locally in background for playwright.
+      run: |
+        pnpm --filter web build
+        nohup pnpm --filter web start -- -p 3000 &
+        sleep 10
+        pnpm --filter web e2e
+      env:
+        CI: true

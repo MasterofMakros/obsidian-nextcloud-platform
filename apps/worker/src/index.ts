@@ -3,8 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-// Redis connection options parsed from URL would go here (omitted for brevity)
-const connection = { host: 'localhost', port: 6379 };
+const connection = { url: REDIS_URL }; // BullMQ supports connection url directly or ioredis options
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });

@@ -6,7 +6,10 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "typecheck": "tsc --noEmit",
+        "test": "echo 'No unit tests yet' && exit 0",
+        "e2e": "playwright test"
     },
     "dependencies": {
         "@onm/config": "workspace:*",

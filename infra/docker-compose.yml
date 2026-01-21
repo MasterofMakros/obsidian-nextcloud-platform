@@ -3,7 +3,7 @@ services:
     image: traefik:v3.0
     container_name: traefik
     command:
-      - "--api.insecure=true"
+      #- "--api.insecure=true" # DISABLED for Production Readiness
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
@@ -46,39 +46,69 @@ services:
     networks:
       - onm-network
 
-  # Applications (Uncomment when Dockerfiles are ready)
-  # api:
-  #   build:
-  #     context: ../
-  #     dockerfile: apps/api/Dockerfile
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/obsidian_media
-  #     - REDIS_URL=redis://redis:6379
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   networks:
-  #     - onm-network
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.api.rule=Host(`api.localhost`)"
+  # Applications
+  api:
+    build:
+      context: ../
+      dockerfile: apps/api/Dockerfile
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/obsidian_media}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - onm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`api.localhost`)"
   
-  # worker:
-  #   build:
-  #     context: ../
-  #     dockerfile: apps/worker/Dockerfile
-  #   environment:
-  #     - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/obsidian_media
-  #     - REDIS_URL=redis://redis:6379
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   networks:
-  #     - onm-network
+  worker:
+    build:
+      context: ../
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/obsidian_media}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - onm-network
+
+  web:
+    build:
+      context: ../
+      dockerfile: apps/web/Dockerfile
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://api:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - onm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`)"
 
 networks:
   onm-network:
