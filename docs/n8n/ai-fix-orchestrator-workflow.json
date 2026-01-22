@@ -1,0 +1,347 @@
+{
+    "name": "AI Fix Orchestrator → Draft PR / Issue Comment",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "value": 5
+                        }
+                    ]
+                }
+            },
+            "id": "cron",
+            "name": "Every 5 min",
+            "type": "n8n-nodes-base.cron",
+            "typeVersion": 1,
+            "position": [
+                200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://api.github.com/search/issues?q=repo:{{$env.GITHUB_OWNER}}/{{$env.GITHUB_REPO}}+is:issue+is:open+label:ai-fix-requested+-label:ai-fix-running",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        }
+                    ]
+                }
+            },
+            "id": "search_issues",
+            "name": "Search Issues (ai-fix-requested)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                430,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const itemsArr = items[0].json.items || [];\nreturn itemsArr.map(i => ({ json: { number: i.number, title: i.title, url: i.url, html_url: i.html_url } }));"
+            },
+            "id": "split",
+            "name": "Split Issues",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                660,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$json.url}}",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        }
+                    ]
+                }
+            },
+            "id": "get_issue",
+            "name": "Get Issue Details",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                890,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://api.github.com/repos/{{$env.GITHUB_OWNER}}/{{$env.GITHUB_REPO}}/issues/{{$json.number}}/labels",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "labels",
+                            "value": "={{['ai-fix-running']}}"
+                        }
+                    ]
+                }
+            },
+            "id": "label_running",
+            "name": "Label: ai-fix-running",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1120,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL}}",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "task",
+                            "value": "fix_proposal"
+                        },
+                        {
+                            "name": "input",
+                            "value": "={{$node['Get Issue Details'].json}}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 60000
+                }
+            },
+            "id": "ai_fix",
+            "name": "AI Fix Proposal",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1350,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const r = items[0].json;\n\nconst out = {\n  analysis_md: r.analysis_md || 'No analysis provided.',\n  risk: r.risk || 'unknown',\n  patch: r.patch_unified_diff || null,\n  pr_title: r.pr_title || 'AI Fix Proposal',\n  pr_body: r.pr_body || '',\n  confidence: r.confidence ?? 0\n};\n\nreturn [{ json: out }];"
+            },
+            "id": "normalize_fix",
+            "name": "Normalize Fix Output",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                1580,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://api.github.com/repos/{{$env.GITHUB_OWNER}}/{{$env.GITHUB_REPO}}/issues/{{$node['Get Issue Details'].json.number}}/comments",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "body",
+                            "value": "={{'## AI Fix Proposal (Draft)\\n\\n' + $json.analysis_md + '\\n\\n' + '**Risk:** ' + $json.risk + '\\n' + '**Confidence:** ' + $json.confidence + '\\n\\n' + ($json.patch ? '### Suggested Patch (unified diff)\\n```diff\\n' + $json.patch.slice(0, 6000) + '\\n```\\n' : 'No patch produced (analysis only).') + '\\n\\n---\\nMaintainer action: If acceptable, implement manually or request PR draft generation.'}}"
+                        }
+                    ]
+                }
+            },
+            "id": "comment_issue",
+            "name": "Comment on Issue",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1810,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://api.github.com/repos/{{$env.GITHUB_OWNER}}/{{$env.GITHUB_REPO}}/issues/{{$node['Get Issue Details'].json.number}}/labels/ai-fix-running",
+                "method": "DELETE",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        }
+                    ]
+                }
+            },
+            "id": "remove_running",
+            "name": "Remove Label: ai-fix-running",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                2040,
+                200
+            ]
+        }
+    ],
+    "connections": {
+        "Every 5 min": {
+            "main": [
+                [
+                    {
+                        "node": "Search Issues (ai-fix-requested)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Search Issues (ai-fix-requested)": {
+            "main": [
+                [
+                    {
+                        "node": "Split Issues",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Issues": {
+            "main": [
+                [
+                    {
+                        "node": "Get Issue Details",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Issue Details": {
+            "main": [
+                [
+                    {
+                        "node": "Label: ai-fix-running",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Label: ai-fix-running": {
+            "main": [
+                [
+                    {
+                        "node": "AI Fix Proposal",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Fix Proposal": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize Fix Output",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize Fix Output": {
+            "main": [
+                [
+                    {
+                        "node": "Comment on Issue",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Comment on Issue": {
+            "main": [
+                [
+                    {
+                        "node": "Remove Label: ai-fix-running",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

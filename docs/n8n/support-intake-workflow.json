@@ -1,0 +1,355 @@
+{
+    "name": "Support Intake → GitHub Issue + Auto-Reply",
+    "nodes": [
+        {
+            "parameters": {
+                "mailbox": "INBOX",
+                "postProcessAction": "markAsRead",
+                "options": {}
+            },
+            "id": "imap_trigger",
+            "name": "IMAP Email Trigger",
+            "type": "n8n-nodes-base.emailReadImap",
+            "typeVersion": 2,
+            "position": [
+                200,
+                200
+            ],
+            "credentials": {
+                "imap": {
+                    "id": "REPLACE_WITH_YOUR_IMAP_CRED_ID",
+                    "name": "Support IMAP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "functionCode": "const msg = items[0].json;\n\n// Normalize email fields\nconst subject = (msg.subject || '').toString().trim();\nconst from = (msg.from || '').toString().trim();\nconst text = (msg.text || msg.textPlain || msg.body || '').toString();\n\n// Basic spam heuristics (lightweight)\nconst spamHints = [/viagra/i,/casino/i,/seo/i,/backlinks/i];\nconst isSpam = spamHints.some(r=>r.test(subject+\"\\n\"+text));\n\n// Extract basic environment hints (best effort)\nconst env = {\n  obsidian: (text.match(/obsidian\\s*version\\s*[:=]\\s*([0-9.]+)/i)||[])[1] || null,\n  plugin: (text.match(/plugin\\s*version\\s*[:=]\\s*([0-9.]+)/i)||[])[1] || null,\n  os: (text.match(/(windows|macos|linux|android|ios)/i)||[])[1] || null\n};\n\nreturn [{ json: { subject, from, text, env, isSpam } }];"
+            },
+            "id": "extract",
+            "name": "Extract + Normalize",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                450,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{$json.isSpam}}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "if_spam",
+            "name": "IF Spam?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                680,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL}}",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "task",
+                            "value": "issue_intake"
+                        },
+                        {
+                            "name": "input",
+                            "value": "={{$json}}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "ai_classify",
+            "name": "AI Classify (Issue Intake)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                920,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const r = items[0].json;\n\nconst required = ['type','severity','area','summary','repro_steps','confidence'];\nfor (const k of required) {\n  if (r[k] === undefined || r[k] === null) {\n    throw new Error(`AI response missing field: ${k}`);\n  }\n}\n\nconst confidence = Math.max(0, Math.min(1, Number(r.confidence)));\nconst labels = Array.isArray(r.suggested_labels) ? r.suggested_labels : [];\n\nconst finalLabels = [];\nfinalLabels.push('from-customer');\nfinalLabels.push(`type:${r.type}`);\nfinalLabels.push(`severity:${r.severity}`);\nfinalLabels.push(`area:${r.area}`);\n\nfor (const l of labels) {\n  if (typeof l === 'string' && l.length < 40 && !l.includes(' ')) finalLabels.push(l);\n}\n\nreturn [{ json: { ...r, confidence, finalLabels } }];"
+            },
+            "id": "validate_ai",
+            "name": "Validate AI JSON",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                1150,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.confidence}}",
+                            "operation": "smaller",
+                            "value2": 0.6
+                        }
+                    ]
+                }
+            },
+            "id": "if_low_conf",
+            "name": "IF Low Confidence?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1370,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "=https://api.github.com/repos/{{$env.GITHUB_OWNER}}/{{$env.GITHUB_REPO}}/issues",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'token ' + $env.GITHUB_TOKEN}}"
+                        },
+                        {
+                            "name": "Accept",
+                            "value": "application/vnd.github+json"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "title",
+                            "value": "={{'[Customer] ' + $json.summary}}"
+                        },
+                        {
+                            "name": "labels",
+                            "value": "={{$json.finalLabels}}"
+                        },
+                        {
+                            "name": "body",
+                            "value": "={{'## Customer Report\\n' + '**Type:** ' + $json.type + '\\n' + '**Severity:** ' + $json.severity + '\\n' + '**Area:** ' + $json.area + '\\n' + '**Confidence:** ' + $json.confidence + '\\n\\n' + '## Summary\\n' + $json.summary + '\\n\\n' + '## Reproduction Steps\\n' + $json.repro_steps + '\\n\\n' + '## Environment (best-effort)\\n' + '- OS: ' + ($node[\"Extract + Normalize\"].json.env.os || 'unknown') + '\\n' + '- Obsidian: ' + ($node[\"Extract + Normalize\"].json.env.obsidian || 'unknown') + '\\n' + '- Plugin: ' + ($node[\"Extract + Normalize\"].json.env.plugin || 'unknown') + '\\n\\n' + '## Raw Customer Message (sanitized)\\n' + '```\\n' + $node[\"Extract + Normalize\"].json.text.slice(0, 6000) + '\\n```\\n'}}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "gh_create_issue",
+            "name": "GitHub Create Issue",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1600,
+                420
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const issue = items[0].json;\nconst issueUrl = issue.html_url;\nreturn [{ json: { issueUrl, issueNumber: issue.number } }];"
+            },
+            "id": "extract_issue_url",
+            "name": "Extract Issue URL",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                1830,
+                420
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{$env.SUPPORT_AUTOACK_ENABLED}}",
+                            "value2": true
+                        }
+                    ]
+                }
+            },
+            "id": "if_autoack",
+            "name": "IF Auto-Ack Enabled?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                2060,
+                420
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL}}",
+                "toEmail": "={{$node['Extract + Normalize'].json.from}}",
+                "subject": "={{'Support-Anfrage erhalten – Ticket #' + $node['Extract Issue URL'].json.issueNumber}}",
+                "text": "={{'Hallo\\n\\nDanke für deine Nachricht. Wir haben ein internes Ticket erstellt: ' + $node['Extract Issue URL'].json.issueUrl + '\\n\\nBitte antworte (falls möglich) mit:\\n- Obsidian-Version\\n- Plugin-Version\\n- Betriebssystem\\n- Repro-Schritte / Screenshots\\n\\nViele Grüße\\n' + $env.PUBLIC_SUPPORT_NAME}}",
+                "options": {}
+            },
+            "id": "send_autoack",
+            "name": "Send Auto-Ack Email",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                2290,
+                540
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_YOUR_SMTP_CRED_ID",
+                    "name": "Support SMTP"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "IMAP Email Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Extract + Normalize",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract + Normalize": {
+            "main": [
+                [
+                    {
+                        "node": "IF Spam?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Spam?": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "AI Classify (Issue Intake)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Classify (Issue Intake)": {
+            "main": [
+                [
+                    {
+                        "node": "Validate AI JSON",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate AI JSON": {
+            "main": [
+                [
+                    {
+                        "node": "IF Low Confidence?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Low Confidence?": {
+            "main": [
+                [
+                    {
+                        "node": "GitHub Create Issue",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "GitHub Create Issue",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "GitHub Create Issue": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Issue URL",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Issue URL": {
+            "main": [
+                [
+                    {
+                        "node": "IF Auto-Ack Enabled?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Auto-Ack Enabled?": {
+            "main": [
+                [
+                    {
+                        "node": "Send Auto-Ack Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support (E-Mail)
+    url: mailto:support@obsidian-nextcloud.media
+    about: For account, billing, or license issues please contact support.

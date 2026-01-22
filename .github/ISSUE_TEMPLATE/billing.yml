@@ -1,0 +1,29 @@
+name: Billing / License
+description: Billing or license activation issues.
+title: "[Billing]: "
+labels: ["type:billing", "private-needed"]
+body:
+  - type: markdown
+    attributes:
+      value: "Do not post sensitive information (full license keys, payment details)."
+  - type: textarea
+    id: issue
+    attributes:
+      label: Problem description
+    validations:
+      required: true
+  - type: input
+    id: email
+    attributes:
+      label: Purchase email (optional)
+      description: Consider contacting support via email instead.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - checkout
+        - subscription
+        - activation
+        - refund
+        - other
