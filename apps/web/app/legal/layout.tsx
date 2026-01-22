@@ -1,4 +1,8 @@
 import Link from 'next/link';
+import { Container } from "@/components/Container";
+import { Prose } from "@/components/Prose";
+import { SiteFooter } from "@/components/SiteFooter";
+import styles from "./layout.module.css";
 
 export default function LegalLayout({
     children,
@@ -6,13 +10,21 @@ export default function LegalLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <nav className="mb-8 flex gap-4 text-sm text-[var(--text-secondary)]">
-                <Link href="/" className="hover:text-[var(--primary)]">← Back to Home</Link>
-            </nav>
-            <article className="prose prose-invert max-w-none">
-                {children}
-            </article>
-        </div>
+        <>
+            <main className={styles.main}>
+                <Container size="narrow">
+                    <nav className={styles.breadcrumb}>
+                        <Link href="/" className={styles.backLink}>
+                            ← Back to Home
+                        </Link>
+                    </nav>
+                    <Prose>
+                        {children}
+                    </Prose>
+                </Container>
+            </main>
+            <SiteFooter />
+        </>
     );
 }
+

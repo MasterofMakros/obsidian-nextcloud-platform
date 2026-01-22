@@ -2,5 +2,6 @@
   "/page": "app/page.js",
   "/pricing/page": "app/pricing/page.js",
   "/checkout/success/page": "app/checkout/success/page.js",
+  "/faq/page": "app/faq/page.js",
   "/legal/impressum/page": "app/legal/impressum/page.js"
 }

@@ -15,6 +15,7 @@
     "/legal/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
+      "static/css/app/legal/layout.css",
       "static/chunks/app/legal/layout.js"
     ],
     "/legal/impressum/page": [
@@ -32,6 +33,12 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/checkout/success/page.js"
+    ],
+    "/faq/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/faq/page.css",
+      "static/chunks/app/faq/page.js"
     ]
   }
 }

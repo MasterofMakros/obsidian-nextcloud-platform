@@ -1,4 +1,10 @@
-import LegalLayout from '../layout';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Impressum",
+    description: "Legal notice and company information for Fentrea GmbH.",
+};
+
 
 export default function ImpressumPage() {
     return (
