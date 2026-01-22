@@ -97,4 +97,136 @@
     padding: var(--spacing-md);
     border-radius: var(--radius-md);
     cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: block;
+}
+
+.btnSecondary:hover {
+    border-color: var(--color-text-muted);
+}
+
+/* Subtitle */
+.subtitle {
+    font-size: var(--typography-size-lg);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-lg);
+    text-align: center;
+}
+
+/* Plan Description */
+.planDescription {
+    font-size: var(--typography-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Features List */
+.featuresList {
+    list-style: none;
+    padding: 0;
+    margin: var(--spacing-md) 0;
+    flex-grow: 1;
+}
+
+.featuresList li {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-muted);
+    font-size: var(--typography-size-sm);
+}
+
+/* Popular Badge */
+.popularBadge {
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-onAccent);
+    font-size: var(--typography-size-xs);
+    font-weight: var(--typography-weight-bold);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-full);
+    position: absolute;
+    top: calc(var(--spacing-md) * -1);
+    right: var(--spacing-md);
+}
+
+.cardPro {
+    position: relative;
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 20px rgba(122, 99, 168, 0.2);
+}
+
+/* Comparison Section */
+.comparisonSection {
+    width: 100%;
+    max-width: 800px;
+    margin-top: var(--spacing-xxl);
+}
+
+.comparisonTitle {
+    font-size: var(--typography-size-xl);
+    color: var(--color-text-normal);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+.comparisonTable {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--color-background-secondary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.comparisonTable th,
+.comparisonTable td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.comparisonTable th {
+    background-color: var(--color-background-primary);
+    color: var(--color-text-normal);
+    font-weight: var(--typography-weight-medium);
+}
+
+.comparisonTable td {
+    color: var(--color-text-muted);
+}
+
+.comparisonTable td:first-child {
+    color: var(--color-text-normal);
+}
+
+.proCellHighlight {
+    color: var(--color-brand-primary) !important;
+    font-weight: var(--typography-weight-medium);
+}
+
+/* Trust Section */
+.trustSection {
+    text-align: center;
+    margin-top: var(--spacing-xxl);
+    padding: var(--spacing-lg);
+}
+
+.trustText {
+    font-size: var(--typography-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--spacing-md);
+}
+
+.legalLinks {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+}
+
+.legalLinks a {
+    font-size: var(--typography-size-sm);
+    color: var(--color-text-muted);
+    text-decoration: none;
+}
+
+.legalLinks a:hover {
+    color: var(--color-brand-primary);
 }

@@ -23,6 +23,26 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Trust Badges */}
+            <section className={styles.trustBadges}>
+                <div className={styles.badge}>
+                    <span className={styles.badgeIcon}>🇨🇭</span>
+                    <span className={styles.badgeText}>Swiss-Engineered</span>
+                </div>
+                <div className={styles.badge}>
+                    <span className={styles.badgeIcon}>🔐</span>
+                    <span className={styles.badgeText}>Privacy-First</span>
+                </div>
+                <div className={styles.badge}>
+                    <span className={styles.badgeIcon}>📴</span>
+                    <span className={styles.badgeText}>Offline-Ready</span>
+                </div>
+                <div className={styles.badge}>
+                    <span className={styles.badgeIcon}>⚡</span>
+                    <span className={styles.badgeText}>No Tracking</span>
+                </div>
+            </section>
+
             {/* Features Grid */}
             <section className={styles.features}>
                 <div className={styles.featureCard}>
@@ -41,6 +61,45 @@ export default function Home() {
                     <p className={styles.featureText}>Optimized video streaming and instant image previews within your notes.</p>
                 </div>
             </section>
+
+            {/* CTA Section */}
+            <section className={styles.ctaSection}>
+                <h2 className={styles.ctaTitle}>Ready to take control?</h2>
+                <p className={styles.ctaSubtitle}>Start free, upgrade anytime.</p>
+                <Link href="/pricing" className={styles.btnPrimary}>
+                    View Plans
+                </Link>
+            </section>
+
+            {/* Footer */}
+            <footer className={styles.footer}>
+                <div className={styles.footerContent}>
+                    <div className={styles.footerBrand}>
+                        <p className={styles.footerLogo}>Obsidian Nextcloud Media</p>
+                        <p className={styles.footerCopyright}>© 2026 Fentrea GmbH. All rights reserved.</p>
+                    </div>
+                    <div className={styles.footerLinks}>
+                        <div className={styles.footerColumn}>
+                            <h4 className={styles.footerHeading}>Product</h4>
+                            <Link href="/pricing">Pricing</Link>
+                            <Link href="/docs">Documentation</Link>
+                            <a href="https://github.com/MasterofMakros/obsidian-nextcloud-platform">GitHub</a>
+                        </div>
+                        <div className={styles.footerColumn}>
+                            <h4 className={styles.footerHeading}>Legal</h4>
+                            <Link href="/legal/impressum">Impressum</Link>
+                            <Link href="/legal/privacy">Privacy Policy</Link>
+                            <Link href="/legal/terms">Terms of Service</Link>
+                            <Link href="/legal/eula">EULA</Link>
+                        </div>
+                        <div className={styles.footerColumn}>
+                            <h4 className={styles.footerHeading}>Support</h4>
+                            <a href="mailto:support@obsidian-nextcloud.media">Contact</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </main>
     );
 }
+
