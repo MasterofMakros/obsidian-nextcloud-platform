@@ -10,9 +10,12 @@
         "lint": "pnpm -r run lint"
     },
     "devDependencies": {
-        "typescript": "^5.0.0",
+        "@types/node": "^20.0.0",
+        "@types/supertest": "^6.0.3",
         "eslint": "^8.0.0",
         "prettier": "^3.0.0",
-        "@types/node": "^20.0.0"
+        "supertest": "^7.2.2",
+        "typescript": "^5.0.0",
+        "vitest": "^4.0.18"
     }
 }

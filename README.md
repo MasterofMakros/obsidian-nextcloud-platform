@@ -1,20 +1,32 @@
-# obsidian-nextcloud-media – kommerzielle Plattform
+# obsidian-nextcloud-media – Commercial Platform
+
+![Status: Commercial Grade](https://img.shields.io/badge/Status-Commercial%20Grade-green) ![Release: v1.0.0](https://img.shields.io/badge/Release-v1.0.0--commercial-blue)
 
 A premium, privacy-first solution for syncing and streaming media between **Obsidian** and **Nextcloud**.
 
 ## Overview
 
-This monorepo contains the complete commercial platform:
+This monorepo contains the complete commercial platform (Backend, Web, Plugin).
+**Status:** `v1.0.0-commercial` (Stable, Hardened)
+
 - **Plugin**: Obsidian plugin with offline-first Ed25519 licensing.
 - **Web**: Next.js marketing and management portal.
-- **API**: Fastify backend for license issuance and management.
-- **Worker**: Event processor for Stripe payments (Idempotent).
+- **API**: Hardened Fastify backend for license issuance and management.
+- **Worker**: Idempotent event processor for Stripe payments.
 
-## Features
+## Key Capabilities
 
 - **Privacy-First License**: No "phone home" required for daily use. Offline verification.
-- **Premium Sync**: High-fidelity video streaming and image previews.
-- **Secure**: End-to-End encrypted architecture.
+- **Security**: Rate-limited, hardened API with strict CORS and Headers.
+- **Observability**: Prometheus metrics and structured JSON logging.
+- **Operations**: Immutable GHCR builds and reproducible staging deployments.
+
+## Documentation
+
+- **Operations**: [DEPLOYMENT.md](docs/DEPLOYMENT.md) (Runbooks, Rollbacks)
+- **Licensing**: [LICENSING.md](docs/LICENSING.md) (Protocol Spec)
+- **Observability**: [OBSERVABILITY.md](docs/OBSERVABILITY.md) (Metrics & Logs)
+- **Stripe**: [STRIPE.md](docs/STRIPE.md) (Webhook Lifecycle)
 
 ## Getting Started
 
@@ -26,6 +38,9 @@ pnpm install
 
 # Build all packages
 pnpm build
+
+# Run Tests (Unit, Integration, E2E)
+pnpm test
 ```
 
 ## Structure

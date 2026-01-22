@@ -31,7 +31,9 @@ const RevokeSchema = z.object({
 export async function licenseRoutes(fastify: FastifyInstance) {
 
     // POST /license/activate
-    fastify.post('/license/activate', async (request, reply) => {
+    fastify.post('/license/activate', {
+        config: { rateLimit: fastify.ratePolicies.activate }
+    }, async (request, reply) => {
         const { licenseKey, deviceIdHash } = ActivateSchema.parse(request.body);
 
         // 1. Find License
@@ -95,7 +97,9 @@ export async function licenseRoutes(fastify: FastifyInstance) {
 
 
     // POST /license/refresh
-    fastify.post('/license/refresh', async (request, reply) => {
+    fastify.post('/license/refresh', {
+        config: { rateLimit: fastify.ratePolicies.refresh }
+    }, async (request, reply) => {
         const { token, deviceIdHash } = RefreshSchema.parse(request.body);
 
         const [payloadB64] = token.split('.');

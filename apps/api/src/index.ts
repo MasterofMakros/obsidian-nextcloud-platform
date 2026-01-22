@@ -1,54 +1,102 @@
 import Fastify from 'fastify';
-import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
-import rateLimit from '@fastify/rate-limit';
 import { Redis } from 'ioredis';
+import { PrismaClient } from '@prisma/client';
+
+// Hardening Plugins
+import rateLimitPlugin from './plugins/rate-limit';
+import corsPlugin from './plugins/cors';
+import securityHeaders from './plugins/security-headers';
+
+// Observability
+import { metricsPlugin } from './plugins/metrics';
+import healthRoutes from './routes/health';
+
+// Routes
+import { licenseRoutes } from './routes/license';
+import { stripeRoutes } from './routes/stripe';
 
 // Environment Variables
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const SERVICE_NAME = 'api';
 
-const fastify = Fastify({
-    logger: true
-});
+// 3. Register Core Plugins
+export const buildApp = async () => {
+    // 1. Dependency Initialization (inside factory to avoid side-effects in tests if needed, 
+    // or keep global if you want shared singleton. For integration tests, shared singleton is usually fine 
+    // BUT fastify instance should be fresh.)
 
-// Security: Rate Limiting
-// Uses Redis to track requests across multiple instances (if scaled)
-const redis = new Redis(REDIS_URL);
-await fastify.register(rateLimit, {
-    redis,
-    max: 100, // 100 requests
-    timeWindow: '1 minute'
-});
+    // Note: We are using global prisma/redis here. 
+    // For strict isolation, we would pass them in or create them here.
+    // Keeping current structure but wrapping fastify creation.
 
-await fastify.register(cors, {
-    origin: '*', // TODO: Allowlist
-});
+    const app = Fastify({
+        logger: {
+            level: process.env.LOG_LEVEL || "info",
+            base: { service: SERVICE_NAME },
+            redact: {
+                paths: [
+                    "req.headers.authorization",
+                    "req.headers.cookie",
+                    "req.body.licenseKey",
+                    "req.body.token",
+                    "headers.authorization",
+                ],
+                remove: true,
+            },
+            formatters: {
+                level(label) {
+                    return { level: label };
+                },
+            },
+            timestamp: () => `,"time":"${new Date().toISOString()}"`,
+        }
+    });
 
-await fastify.register(sensible);
-
-// Register Routes
-import { licenseRoutes } from './routes/license';
-import { stripeRoutes } from './routes/stripe';
-
-await fastify.register(licenseRoutes);
-await fastify.register(stripeRoutes);
-
-
-
-// Health Check
-fastify.get('/health', async () => {
-    return { status: 'ok', timestamp: new Date() };
-});
-
-// Start Server
-const start = async () => {
     try {
-        await fastify.listen({ port: PORT, host: '0.0.0.0' });
+        // Decorate dependencies so they are accessible if needed
+        app.decorate('prisma', prisma);
+        app.decorate('redis', redis);
+
+        await app.register(sensible);
+
+        // 1. Observability (Logger init is implicit in Fastify constructor)
+        await app.register(metricsPlugin);
+
+        // 2. Security Headers (Hardening)
+        await app.register(securityHeaders, { enableHsts: process.env.NODE_ENV === "production" });
+
+        // 3. CORS (Allowlist)
+        await app.register(corsPlugin);
+
+        // 4. Rate Limiting (Redis-backed, route policies)
+        await app.register(rateLimitPlugin);
+
+        // 5. Health & Readiness
+        await app.register(healthRoutes, { prisma, redis });
+
+        // 6. App Routes
+        await app.register(licenseRoutes);
+        await app.register(stripeRoutes);
+
+        return app;
     } catch (err) {
-        fastify.log.error(err);
+        app.log.error(err);
         process.exit(1);
     }
 };
 
-start();
+const start = async () => {
+    const app = await buildApp();
+    try {
+        await app.listen({ port: PORT, host: '0.0.0.0' });
+    } catch (err) {
+        app.log.error(err);
+        process.exit(1);
+    }
+};
+
+if (require.main === module) {
+    start();
+}

@@ -24,7 +24,9 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         }
     });
 
-    fastify.post('/stripe/webhook', async (request, reply) => {
+    fastify.post('/stripe/webhook', {
+        config: { rateLimit: fastify.ratePolicies.webhook }
+    }, async (request, reply) => {
         const signature = request.headers['stripe-signature'];
         const body = request.body as { raw: Buffer, parsed: any };
 

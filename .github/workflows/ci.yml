@@ -40,20 +40,22 @@ jobs:
       # Ensure all packages have a typecheck script or run tsc directly if simple
       run: pnpm -r run typecheck --if-present
 
-    # 2. Unit Tests
-    - name: Unit Tests
-      run: pnpm -r test --if-present
-
-    # 3. Integration Infrastructure
+    # 3. Integration Infrastructure (Start early for tests)
     - name: Start Infrastructure
       run: docker compose -f infra/docker-compose.yml up -d
       
     - name: Wait for Healthchecks
       run: |
         timeout 60s sh -c 'until docker ps | grep onm-postgres | grep "(healthy)"; do sleep 1; done'
-        # In a real scenario, we would also wait for API/Web health if built. 
-        # For CI speed, we might build locally or use prebuilt images. 
-        # Here we assume just DB/Redis for integration tests unless we build full images.
+        timeout 60s sh -c 'until docker ps | grep onm-redis | grep "(healthy)"; do sleep 1; done'
+
+    # Testing Suite (Vitest)
+    - name: Run Tests (Unit, Integration, E2E-light)
+      run: pnpm test
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/onm_db?schema=public
+        REDIS_URL: redis://localhost:6379
+
         
     # 4. E2E Tests
     - name: Run E2E Tests
