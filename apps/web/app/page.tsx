@@ -82,6 +82,7 @@ export default function Home() {
                         <div className={styles.footerColumn}>
                             <h4 className={styles.footerHeading}>Product</h4>
                             <Link href="/pricing">Pricing</Link>
+                            <Link href="/faq">FAQ</Link>
                             <Link href="/docs">Documentation</Link>
                             <a href="https://github.com/MasterofMakros/obsidian-nextcloud-platform">GitHub</a>
                         </div>
