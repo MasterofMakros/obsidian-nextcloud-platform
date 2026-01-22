@@ -71,7 +71,7 @@ export function createWorkerMetrics(): WorkerMetrics {
 }
 
 export function startWorkerMetricsServer(metrics: WorkerMetrics): void {
-    const port = Number(process.env.WORKER_METRICS_PORT || 9100);
+    const port = Number(process.env.WORKER_METRICS_PORT || 9110);
 
     const server = http.createServer(async (req, res) => {
         try {

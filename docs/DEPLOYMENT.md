@@ -175,7 +175,7 @@ Erwartet:
 ### 5.2 Worker
 
 ```bash
-docker compose exec worker wget -qO- http://localhost:9100/metrics | head
+docker compose exec worker wget -qO- http://localhost:9110/metrics | head
 ```
 
 ---

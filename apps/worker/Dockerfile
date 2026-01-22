@@ -2,13 +2,14 @@ FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN apk add --no-cache openssl libc6-compat
 
 # Builder
 FROM base AS builder
 WORKDIR /app
 COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @onm/db generate
+RUN pnpm install
+RUN pnpm --filter @onm/db exec prisma generate --schema=packages/db/prisma/schema.prisma --output=/app/prisma-client
 RUN pnpm --filter worker build
 RUN pnpm deploy --filter=worker --prod /prod/worker
 
@@ -16,6 +17,7 @@ RUN pnpm deploy --filter=worker --prod /prod/worker
 FROM base AS runner
 WORKDIR /app
 COPY --from=builder /prod/worker /app
+COPY --from=builder /app/prisma-client /app/node_modules/.prisma/client
 
 ENV NODE_ENV=production
 

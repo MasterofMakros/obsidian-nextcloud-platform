@@ -125,4 +125,4 @@ Pflichtfelder: `level`, `time` (ISO), `service` (api|worker), `event`, `msg`, `c
 ## 5. Implementation Notes
 * `prom-client` Registry global nutzen.
 * Fastify Plugin für Auto-Instrumentation.
-* Worker: separater HTTP Server auf Port 9100 für `/metrics`.
+* Worker: separater HTTP Server auf Port 9110 für `/metrics`.

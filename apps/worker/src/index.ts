@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { Worker, Queue } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 import {
@@ -42,8 +42,11 @@ const instrumentedProcessor = instrumentProcessor(metrics, QUEUE_NAME, GENERIC_J
 // Create Worker
 const worker = new Worker(QUEUE_NAME, instrumentedProcessor, { connection });
 
+// Create Queue instance for metrics (read-only)
+const queue = new Queue(QUEUE_NAME, { connection });
+
 // Start Polling Queue Depth
-startQueueDepthPolling(metrics, QUEUE_NAME, worker);
+startQueueDepthPolling(metrics, QUEUE_NAME, queue);
 
 worker.on('completed', job => {
     console.log(`${job.id} has completed!`);

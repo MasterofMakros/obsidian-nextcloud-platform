@@ -13,7 +13,7 @@ The backend (`apps/worker`) processes Stripe events asynchronously to ensure hig
 To test webhooks locally, use the Stripe CLI:
 
 ```bash
-stripe listen --forward-to localhost:3000/api/v1/webhooks/stripe
+stripe listen --forward-to localhost:3011/api/v1/webhooks/stripe
 ```
 
 Copy the printed webhook signing secret (`whsec_...`) to your `.env` as `STRIPE_WEBHOOK_SECRET`.

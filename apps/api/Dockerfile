@@ -2,13 +2,14 @@ FROM node:20-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN apk add --no-cache openssl libc6-compat
 
 # Prune
 FROM base AS builder
 WORKDIR /app
 COPY . .
-RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @onm/db generate
+RUN pnpm install
+RUN pnpm --filter @onm/db exec prisma generate --schema=packages/db/prisma/schema.prisma --output=/app/prisma-client
 RUN pnpm --filter api build
 RUN pnpm deploy --filter=api --prod /prod/api
 
@@ -16,6 +17,7 @@ RUN pnpm deploy --filter=api --prod /prod/api
 FROM base AS runner
 WORKDIR /app
 COPY --from=builder /prod/api /app
+COPY --from=builder /app/prisma-client /app/node_modules/.prisma/client
 
 # Ensure we have the prisma client in the prod image (it's often a peer dep or generated)
 # In pnpm deploy --prod, it should bring deps. 
@@ -25,6 +27,6 @@ COPY --from=builder /prod/api /app
 # Let's assume standard pnpm deploy works for now, but we might need to verify connection.
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3011
 
 CMD ["node", "dist/index.js"]

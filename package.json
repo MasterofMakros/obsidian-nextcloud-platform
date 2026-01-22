@@ -10,6 +10,7 @@
         "lint": "pnpm -r run lint"
     },
     "devDependencies": {
+        "@playwright/test": "^1.57.0",
         "@types/node": "^20.0.0",
         "@types/supertest": "^6.0.3",
         "eslint": "^8.0.0",

@@ -17,7 +17,7 @@ import { licenseRoutes } from './routes/license';
 import { stripeRoutes } from './routes/stripe';
 
 // Environment Variables
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3011;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const SERVICE_NAME = 'api';
 
@@ -52,6 +52,16 @@ export const buildApp = async () => {
             },
             timestamp: () => `,"time":"${new Date().toISOString()}"`,
         }
+    });
+
+    // Instantiate Dependencies
+    const prisma = new PrismaClient();
+    const redis = new Redis(REDIS_URL);
+
+    // Graceful Shutdown
+    app.addHook('onClose', async (instance) => {
+        await prisma.$disconnect();
+        await redis.quit();
     });
 
     try {

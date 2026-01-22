@@ -5,3 +5,8 @@ dist
 coverage
 .turbo
 *.log
+.next
+.env.local
+prisma-client
+test-results
+

@@ -33,7 +33,7 @@ function normalizeRoute(req: FastifyRequest): string {
     // Prefer Fastify's routerPath (template) to avoid high-cardinality URLs.
     // Fallback to raw routeOptions.url or "unknown".
     return (
-        // @ts-expect-error fastify internal typing differs by version
+
         (req as any).routerPath ||
         (req.routeOptions && (req.routeOptions.url as string)) ||
         "unknown"

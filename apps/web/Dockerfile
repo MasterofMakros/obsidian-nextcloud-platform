@@ -14,5 +14,5 @@ FROM base AS runner
 WORKDIR /app
 RUN npm install -g pnpm
 COPY --from=builder /app .
-EXPOSE 3000
+EXPOSE 3010
 CMD ["pnpm", "--filter", "web", "start"]
