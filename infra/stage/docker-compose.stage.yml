@@ -100,7 +100,38 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  gateway:
+    image: ghcr.io/masterofmakros/obsidian-nextcloud-platform/gateway:stage
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      LOG_LEVEL: info
+
+      # Authentication
+      GATEWAY_BEARER_TOKEN: ${GATEWAY_BEARER_TOKEN}
+
+      # LLM Configuration (wire up your preferred provider)
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.gateway.rule=Host(`gateway.${ROOT_DOMAIN}`)
+      - traefik.http.routers.gateway.entrypoints=websecure
+      - traefik.http.routers.gateway.tls.certresolver=le
+      - traefik.http.services.gateway.loadbalancer.server.port=8080
+      # Rate limiting middleware
+      - traefik.http.middlewares.gateway-ratelimit.ratelimit.average=30
+      - traefik.http.middlewares.gateway-ratelimit.ratelimit.burst=50
+      - traefik.http.routers.gateway.middlewares=gateway-ratelimit
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
 volumes:
   traefik_letsencrypt:
   pg_data:
   redis_data:
+
