@@ -6,7 +6,19 @@ import crypto from 'crypto';
 import { isPast } from 'date-fns';
 
 const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2023-10-16' as any });
+
+// Lazy-initialized Stripe client to prevent startup crash if key is missing
+let stripeClient: Stripe | null = null;
+function getStripe(): Stripe {
+    if (!stripeClient) {
+        const key = process.env.STRIPE_SECRET_KEY;
+        if (!key) {
+            throw new Error('STRIPE_SECRET_KEY is not configured');
+        }
+        stripeClient = new Stripe(key, { apiVersion: '2023-10-16' as any });
+    }
+    return stripeClient;
+}
 
 /**
  * Hash a token for secure storage
@@ -124,7 +136,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
 
         try {
             // Get active subscriptions from Stripe
-            const subscriptions = await stripe.subscriptions.list({
+            const subscriptions = await getStripe().subscriptions.list({
                 customer: user.stripeCustomerId,
                 status: 'active',
                 limit: 1
@@ -171,7 +183,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         }
 
         try {
-            const subscriptions = await stripe.subscriptions.list({
+            const subscriptions = await getStripe().subscriptions.list({
                 customer: user.stripeCustomerId,
                 status: 'active',
                 limit: 1
