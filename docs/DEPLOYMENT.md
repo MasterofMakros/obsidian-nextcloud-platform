@@ -313,7 +313,291 @@ Empfohlenes Vorgehen:
 
 ---
 
-## 11. Status
+## 11. Troubleshooting Guide
+
+### 11.1 Common Issues
+
+#### Issue: Docker Compose Fails to Start
+
+**Symptoms:**
+```bash
+Error: Cannot start service api: driver failed programming external connectivity
+```
+
+**Cause:** Port already in use
+
+**Solution:**
+```bash
+# Find process using port
+sudo lsof -i :3011
+
+# Kill process or change port in docker-compose.yml
+sudo kill -9 <PID>
+```
+
+---
+
+#### Issue: Database Connection Fails
+
+**Symptoms:**
+```
+Error: Can't reach database server at localhost:5432
+```
+
+**Cause:** PostgreSQL not running or wrong credentials
+
+**Solution:**
+```bash
+# Check if Postgres is running
+docker compose ps postgres
+
+# View Postgres logs
+docker compose logs postgres
+
+# Verify DATABASE_URL in .env
+echo $DATABASE_URL
+
+# Test connection manually
+psql $DATABASE_URL -c "SELECT 1"
+```
+
+---
+
+#### Issue: Health Check Returns 503
+
+**Symptoms:**
+```bash
+$ curl https://api.example.com/health
+503 Service Unavailable
+```
+
+**Cause:** Database or Redis unreachable
+
+**Solution:**
+```bash
+# Check all services status
+docker compose ps
+
+# View API logs
+docker compose logs api --tail 100
+
+# Test database connectivity
+docker compose exec api sh -c 'wget -qO- http://localhost:3011/health'
+```
+
+---
+
+#### Issue: Stripe Webhooks Not Received
+
+**Symptoms:**
+- Checkout completed but no license created
+- Worker not processing events
+
+**Cause:** Webhook signature verification fails or wrong endpoint
+
+**Solution:**
+```bash
+# 1. Check webhook endpoint in Stripe Dashboard
+# Should be: https://api.example.com/stripe/webhook
+
+# 2. Verify STRIPE_WEBHOOK_SECRET matches Stripe Dashboard
+echo $STRIPE_WEBHOOK_SECRET
+
+# 3. Check worker logs
+docker compose logs worker --tail 50
+
+# 4. Test webhook manually
+stripe trigger checkout.session.completed \
+  --override checkout_session:customer_email=test@example.com
+```
+
+---
+
+#### Issue: Images Not Pulling from GHCR
+
+**Symptoms:**
+```
+Error: pull access denied for ghcr.io/...
+```
+
+**Cause:** Not authenticated or wrong credentials
+
+**Solution:**
+```bash
+# Re-login to GHCR
+docker logout ghcr.io
+docker login ghcr.io
+
+# Username: your GitHub username
+# Password: GitHub Personal Access Token with read:packages scope
+
+# Verify login
+docker pull ghcr.io/masterofmakros/obsidian-nextcloud-platform/api:stage
+```
+
+---
+
+#### Issue: Traefik SSL Certificate Fails
+
+**Symptoms:**
+```
+SSL certificate problem: unable to get local issuer certificate
+```
+
+**Cause:** Let's Encrypt rate limit or DNS not propagated
+
+**Solution:**
+```bash
+# 1. Check DNS propagation
+dig api.example.com
+
+# 2. View Traefik logs
+docker compose logs traefik --tail 100
+
+# 3. Force certificate renewal (after fixing DNS)
+docker compose exec traefik rm -rf /letsencrypt/acme.json
+docker compose restart traefik
+
+# 4. If rate-limited, use staging server temporarily
+# In docker-compose.yml:
+# --certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+```
+
+---
+
+### 11.2 Performance Issues
+
+#### High API Latency
+
+**Diagnosis:**
+```bash
+# Check Prometheus metrics
+curl https://api.example.com/metrics | grep http_request_duration
+
+# Check database query performance
+docker compose exec postgres psql -U $DB_USER -d $DB_NAME -c "
+SELECT query, mean_exec_time, calls
+FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+"
+```
+
+**Common Fixes:**
+- Add database indexes (see PERFORMANCE_ANALYSIS.md)
+- Increase connection pool size
+- Enable Redis caching
+
+---
+
+#### Worker Queue Backlog
+
+**Diagnosis:**
+```bash
+# Check queue depth
+curl http://localhost:9110/metrics | grep queue_depth
+```
+
+**Solutions:**
+```bash
+# 1. Scale worker instances
+docker compose up -d --scale worker=3
+
+# 2. Increase concurrency (in worker config)
+WORKER_CONCURRENCY=10
+
+# 3. Check for failed jobs
+docker compose exec redis redis-cli
+> LLEN bull:stripe:failed
+```
+
+---
+
+### 11.3 Emergency Procedures
+
+#### Complete System Outage
+
+**Steps:**
+1. Check all service status:
+   ```bash
+   docker compose ps
+   ```
+
+2. Restart failed services:
+   ```bash
+   docker compose restart api worker
+   ```
+
+3. If still failing, rollback (see Section 6.2)
+
+4. Notify users via status page
+
+---
+
+#### Data Corruption Detected
+
+**Steps:**
+1. **STOP all writes immediately:**
+   ```bash
+   docker compose stop api worker
+   ```
+
+2. Restore from backup:
+   ```bash
+   # Restore database
+   psql $DATABASE_URL < backup_YYYYMMDD.sql
+   ```
+
+3. Verify data integrity:
+   ```bash
+   # Check license count
+   psql $DATABASE_URL -c "SELECT COUNT(*) FROM licenses;"
+   ```
+
+4. Restart services:
+   ```bash
+   docker compose up -d
+   ```
+
+---
+
+#### Security Breach Detected
+
+**Immediate Actions:**
+1. Rotate all secrets (see Section 7)
+2. Review access logs:
+   ```bash
+   docker compose logs api | grep "401\|403\|500"
+   ```
+3. Disable compromised API keys
+4. Force password reset for affected users
+
+---
+
+## 12. Monitoring & Alerts
+
+### Critical Alerts
+
+Set up alerts for:
+
+| Alert | Threshold | Action |
+|-------|-----------|--------|
+| API Error Rate | > 5% | Check logs, consider rollback |
+| Database Connections | > 80% | Scale database or increase pool |
+| Queue Depth | > 1000 | Scale workers |
+| Disk Usage | > 85% | Clean up logs, expand storage |
+| SSL Expiry | < 7 days | Check Let's Encrypt renewal |
+
+### Health Check Schedule
+
+```bash
+# Add to cron (every 5 minutes)
+*/5 * * * * curl -f https://api.example.com/health || systemctl restart docker-compose@platform
+```
+
+---
+
+## 13. Status
 
 > **Commercial Deployment Ready**
 
