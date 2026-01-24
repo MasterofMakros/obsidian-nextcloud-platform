@@ -1,0 +1,230 @@
+.container {
+    max-width: 800px;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 0.25rem;
+}
+
+.subtitle {
+    color: #888;
+    margin: 0 0 2rem;
+    font-size: 0.875rem;
+}
+
+.loading,
+.error {
+    padding: 2rem;
+    text-align: center;
+    color: #888;
+}
+
+.error {
+    color: #ef4444;
+}
+
+.emptyState {
+    text-align: center;
+    padding: 3rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #333;
+}
+
+.emptyState p {
+    color: #888;
+    margin-bottom: 1.5rem;
+}
+
+.ctaButton {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #f5a623, #f57723);
+    color: #000;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+/* Table */
+.table {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tableHeader {
+    display: grid;
+    grid-template-columns: 1fr 100px 80px 60px;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    background: #0f0f0f;
+    border-bottom: 1px solid #333;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.tableRow {
+    display: grid;
+    grid-template-columns: 1fr 100px 80px 60px;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    align-items: center;
+    border-bottom: 1px solid #222;
+}
+
+.tableRow:last-child {
+    border-bottom: none;
+}
+
+.keyCell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.keyCode {
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+    font-size: 0.8125rem;
+    color: #fff;
+    background: #0f0f0f;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.copyButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.copyButton:hover {
+    opacity: 1;
+}
+
+.planBadge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: #2563eb;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.statusBadge {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.statusActive {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.statusExpired {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.statusGrace {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.statusRevoked {
+    background: rgba(107, 114, 128, 0.15);
+    color: #6b7280;
+}
+
+.actionButton {
+    background: none;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background 0.2s;
+}
+
+.actionButton:hover {
+    background: #333;
+}
+
+.hint {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 0.8125rem;
+}
+
+/* Discord Card */
+.discordCard {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(88, 101, 242, 0.05));
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.discordHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.discordIcon {
+    font-size: 1.25rem;
+}
+
+.discordText {
+    color: #888;
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+}
+
+.discordButton {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    background: #5865f2;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.discordButton:hover {
+    background: #4752c4;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+
+    .tableHeader,
+    .tableRow {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .tableHeader span:not(:first-child) {
+        display: none;
+    }
+}

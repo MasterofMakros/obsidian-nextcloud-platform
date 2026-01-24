@@ -1,0 +1,106 @@
+.container {
+    max-width: 600px;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 0.25rem;
+}
+
+.subtitle {
+    color: #888;
+    margin: 0 0 2rem;
+    font-size: 0.875rem;
+}
+
+.section {
+    margin-bottom: 2rem;
+}
+
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 1rem;
+}
+
+.infoCard {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #222;
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.infoLabel {
+    color: #888;
+    font-size: 0.875rem;
+}
+
+.infoValue {
+    color: #fff;
+    font-size: 0.875rem;
+    font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+}
+
+.logoutButton {
+    padding: 0.625rem 1.25rem;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.logoutButton:hover {
+    background: #444;
+}
+
+.dangerSection {
+    padding: 1.5rem;
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+}
+
+.dangerTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ef4444;
+    margin: 0 0 0.5rem;
+}
+
+.dangerText {
+    color: #888;
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+}
+
+.deleteButton {
+    padding: 0.625rem 1.25rem;
+    background: transparent;
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.1);
+}

@@ -12,33 +12,33 @@
       "static/css/app/page.css",
       "static/chunks/app/page.js"
     ],
-    "/legal/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/legal/layout.css",
-      "static/chunks/app/legal/layout.js"
-    ],
-    "/legal/impressum/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/legal/impressum/page.js"
-    ],
     "/pricing/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/pricing/page.css",
       "static/chunks/app/pricing/page.js"
     ],
-    "/checkout/success/page": [
+    "/legal/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/checkout/success/page.js"
+      "static/css/app/legal/layout.css",
+      "static/chunks/app/legal/layout.js"
+    ],
+    "/legal/terms/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/legal/terms/page.js"
     ],
     "/faq/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/faq/page.css",
       "static/chunks/app/faq/page.js"
+    ],
+    "/docs/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/docs/page.js"
     ]
   }
 }
