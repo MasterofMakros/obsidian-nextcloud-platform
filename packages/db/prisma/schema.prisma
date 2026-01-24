@@ -31,9 +31,43 @@ model User {
   id               String    @id @default(uuid())
   email            String    @unique
   stripeCustomerId String?   @unique
+  
+  // Auth fields
+  emailVerified    DateTime?
+  magicLinkToken   String?
+  magicLinkExpiry  DateTime?
+  
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  
   licenses         License[]
+  sessions         Session[]
+  accounts         Account[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String    @id @default(uuid())
+  userId            String
+  provider          String    // "google" | "github" | "magic-link"
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([provider, providerAccountId])
 }
 
 model License {
@@ -73,3 +107,4 @@ model PaymentEvent {
   processedAt DateTime?
   error     String?
 }
+
