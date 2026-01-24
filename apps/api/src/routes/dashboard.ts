@@ -137,8 +137,8 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
                 };
             }
 
-            const sub = subscriptions.data[0];
-            const plan = (sub as any).items?.data?.[0]?.price?.nickname || 'Unknown Plan';
+            const sub = subscriptions.data[0] as any;
+            const plan = sub.items?.data?.[0]?.price?.nickname || 'Unknown Plan';
 
             return {
                 hasSubscription: true,
