@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
 import styles from '../page.module.css';
 
-export default function VerifyPage() {
+function VerifyContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { verifyMagicLink } = useAuth();
@@ -66,5 +66,20 @@ export default function VerifyPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function VerifyPage() {
+    return (
+        <Suspense fallback={
+            <div className={styles.container}>
+                <div className={styles.card}>
+                    <div className={styles.spinner}></div>
+                    <h1 className={styles.title}>Loading...</h1>
+                </div>
+            </div>
+        }>
+            <VerifyContent />
+        </Suspense>
     );
 }
