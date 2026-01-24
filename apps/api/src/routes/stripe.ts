@@ -2,11 +2,29 @@ import { FastifyInstance } from 'fastify';
 import Stripe from 'stripe';
 import { Queue } from 'bullmq';
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY!;
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET!;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' as any });
+// Lazy-initialized Stripe client to prevent startup crash if key is missing
+let stripeClient: Stripe | null = null;
+function getStripe(): Stripe {
+    if (!stripeClient) {
+        const key = process.env.STRIPE_SECRET_KEY;
+        if (!key) {
+            throw new Error('STRIPE_SECRET_KEY is not configured');
+        }
+        stripeClient = new Stripe(key, { apiVersion: '2023-10-16' as any });
+    }
+    return stripeClient;
+}
+
+function getWebhookSecret(): string {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!secret) {
+        throw new Error('STRIPE_WEBHOOK_SECRET is not configured');
+    }
+    return secret;
+}
+
 const eventQueue = new Queue('stripe-events', { connection: { url: REDIS_URL } });
 
 export async function stripeRoutes(fastify: FastifyInstance) {
@@ -37,10 +55,10 @@ export async function stripeRoutes(fastify: FastifyInstance) {
         let event: Stripe.Event;
 
         try {
-            event = stripe.webhooks.constructEvent(
+            event = getStripe().webhooks.constructEvent(
                 body.raw,
                 signature,
-                STRIPE_WEBHOOK_SECRET
+                getWebhookSecret()
             );
         } catch (err: any) {
             console.error(`Webhook signature verification failed: ${err.message}`);
