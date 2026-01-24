@@ -22,6 +22,7 @@ RUN pnpm deploy --filter=api --prod /prod/api
 FROM base AS runner
 WORKDIR /app
 COPY --from=builder /prod/api /app
+COPY --from=builder /app/apps/api/dist /app/dist
 COPY --from=builder /app/prisma-copy /app/node_modules/.prisma/client
 
 # Ensure we have the prisma client in the prod image (it's often a peer dep or generated)
