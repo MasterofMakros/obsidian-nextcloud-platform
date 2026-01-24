@@ -91,7 +91,7 @@ export const processStripeEventJob = async (args: { prisma: PrismaClient, job: a
 
             case 'invoice.payment_failed': {
                 const invoice = data.object as Stripe.Invoice;
-                const subscriptionId = invoice.subscription as string;
+                const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
                 console.log(`Payment failed for sub ${subscriptionId}`);
 
                 // Enter Grace Period
@@ -107,7 +107,7 @@ export const processStripeEventJob = async (args: { prisma: PrismaClient, job: a
 
             case 'invoice.paid': {
                 const invoice = data.object as Stripe.Invoice;
-                const subscriptionId = invoice.subscription as string;
+                const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
                 console.log(`Payment succeeded for sub ${subscriptionId}`);
 
                 // Reactivate
