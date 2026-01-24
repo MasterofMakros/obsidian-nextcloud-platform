@@ -17,7 +17,7 @@ RUN pnpm deploy --filter=worker --prod /prod/worker
 FROM base AS runner
 WORKDIR /app
 COPY --from=builder /prod/worker /app
-COPY --from=builder /app/node_modules/.prisma/client /app/node_modules/.prisma/client
+COPY --from=builder /app/packages/db/node_modules/.prisma/client /app/node_modules/.prisma/client
 
 ENV NODE_ENV=production
 
