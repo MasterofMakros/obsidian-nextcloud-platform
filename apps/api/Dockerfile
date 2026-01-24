@@ -23,7 +23,17 @@ FROM base AS runner
 WORKDIR /app
 COPY --from=builder /prod/api /app
 COPY --from=builder /app/apps/api/dist /app/dist
+
+# Copy Prisma client to the correct pnpm nested location
+RUN mkdir -p /app/node_modules/.prisma/client
 COPY --from=builder /app/prisma-copy /app/node_modules/.prisma/client
+
+# Also copy to the nested pnpm path where @prisma/client looks for it
+RUN PRISMA_DEST=$(find /app/node_modules/.pnpm -type d -name ".prisma" 2>/dev/null | head -1) && \
+    if [ -n "$PRISMA_DEST" ]; then \
+    mkdir -p "$PRISMA_DEST/client" && \
+    cp -r /app/node_modules/.prisma/client/* "$PRISMA_DEST/client/"; \
+    fi
 
 # Ensure we have the prisma client in the prod image (it's often a peer dep or generated)
 # In pnpm deploy --prod, it should bring deps. 
