@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
+import cookie from '@fastify/cookie';
 import { Redis } from 'ioredis';
 import { PrismaClient } from '@prisma/client';
 
@@ -13,6 +14,8 @@ import { metricsPlugin } from './plugins/metrics';
 import healthRoutes from './routes/health';
 
 // Routes
+import { authRoutes } from './routes/auth';
+import { dashboardRoutes } from './routes/dashboard';
 import { licenseRoutes } from './routes/license';
 import { stripeRoutes } from './routes/stripe';
 
@@ -83,10 +86,18 @@ export const buildApp = async () => {
         // 4. Rate Limiting (Redis-backed, route policies)
         await app.register(rateLimitPlugin);
 
-        // 5. Health & Readiness
+        // 5. Cookie Support (for sessions)
+        await app.register(cookie, {
+            secret: process.env.COOKIE_SECRET || 'dev-secret-change-in-production',
+            parseOptions: {}
+        });
+
+        // 6. Health & Readiness
         await app.register(healthRoutes, { prisma, redis });
 
-        // 6. App Routes
+        // 7. App Routes
+        await app.register(authRoutes);
+        await app.register(dashboardRoutes);
         await app.register(licenseRoutes);
         await app.register(stripeRoutes);
 
