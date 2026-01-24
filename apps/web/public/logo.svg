@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background: Deep grey/black circle to represent the "Obsidian" world -->
+  <circle cx="256" cy="256" r="256" fill="#1e1e1e"/>
+  
+  <!-- Cloud Shape: Representing Nextcloud/Sync -->
+  <path d="M368 320H152C129.909 320 112 302.091 112 280C112 260.85 125.467 244.938 143.277 241.05C146.494 207.7 174.636 181.333 208.667 181.333C212.181 181.333 215.617 181.677 218.966 182.33C227.143 162.658 246.611 149.333 268.667 149.333C298.122 149.333 322 173.211 322 202.667C322 204.62 321.896 206.539 321.693 208.43C345.548 213.91 363.333 235.32 363.333 261.333C363.333 293.739 337.073 320 304.667 320H368V320Z" fill="#7a63a8" fill-opacity="0.2"/>
+  
+  <!-- Main Icon: Abstract "Play/Media" triangle intersecting a "Crystal/Obsidian" facet -->
+  <path d="M213.333 341.333L341.333 256L213.333 170.667V341.333Z" fill="#7a63a8"/>
+  <path d="M213.333 341.333L341.333 256L213.333 170.667V341.333Z" stroke="#1e1e1e" stroke-width="12" stroke-linejoin="round"/>
+  
+  <!-- Accent Dot: Nextcloud Blue reference -->
+  <circle cx="360" cy="160" r="24" fill="#0082c9"/>
+</svg>

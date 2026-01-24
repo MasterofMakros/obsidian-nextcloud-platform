@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
+import { GitHubIcon } from "@/components/icons/GitHubIcon";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -19,7 +20,8 @@ export default function Home() {
                                 Download Plugin
                             </Link>
                             <a href="https://github.com/MasterofMakros/obsidian-nextcloud-platform" className={styles.btnSecondary}>
-                                View on GitHub
+                                <GitHubIcon size={18} />
+                                <span>View on GitHub</span>
                             </a>
                         </div>
                     </div>

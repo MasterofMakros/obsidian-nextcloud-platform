@@ -52,6 +52,9 @@
 }
 
 .btnSecondary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
     background-color: transparent;
     color: var(--color-text-normal);
     padding: var(--spacing-sm) var(--spacing-lg);

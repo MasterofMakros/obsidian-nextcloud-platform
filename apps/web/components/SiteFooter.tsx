@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GitHubIcon } from "./icons/GitHubIcon";
 import styles from "./SiteFooter.module.css";
 
 export function SiteFooter() {
@@ -16,7 +17,10 @@ export function SiteFooter() {
                         <Link href="/pricing">Pricing</Link>
                         <Link href="/faq">FAQ</Link>
                         <Link href="/docs">Documentation</Link>
-                        <a href="https://github.com/MasterofMakros/obsidian-nextcloud-platform" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a href="https://github.com/MasterofMakros/obsidian-nextcloud-platform" target="_blank" rel="noopener noreferrer" className={styles.githubLink}>
+                            <GitHubIcon size={14} />
+                            <span>GitHub</span>
+                        </a>
                     </div>
                     <div className={styles.column}>
                         <h4 className={styles.heading}>Legal</h4>
@@ -34,3 +38,4 @@ export function SiteFooter() {
         </footer>
     );
 }
+

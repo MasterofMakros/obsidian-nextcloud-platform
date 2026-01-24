@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     description: "Seamlessly sync media between Obsidian and Nextcloud. Swiss-engineered, privacy-first, offline-ready.",
     icons: {
         icon: [
+            { url: "/logo.svg", type: "image/svg+xml" },
             { url: "/favicon.ico", sizes: "any" },
             { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
         ],

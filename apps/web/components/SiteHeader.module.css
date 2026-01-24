@@ -27,8 +27,9 @@
 }
 
 .logoIcon {
-    color: var(--color-brand-primary);
-    font-size: 1.5rem;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
 }
 
 .logoText {
@@ -62,4 +63,10 @@
     .nav {
         gap: var(--spacing-md);
     }
+}
+
+.githubLink {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
 }
