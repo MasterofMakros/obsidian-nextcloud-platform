@@ -23,6 +23,11 @@ const RefreshSchema = z.object({
     deviceIdHash: z.string()
 });
 
+const ValidateSchema = z.object({
+    licenseKey: z.string(),
+    deviceIdHash: z.string()
+});
+
 const RevokeSchema = z.object({
     licenseId: z.string(),
     reason: z.string().optional()
@@ -156,6 +161,35 @@ export async function licenseRoutes(fastify: FastifyInstance) {
             expiresAt: nextExpiresAt,
             graceDaysLeft
         };
+    });
+
+    // POST /license/validate
+    fastify.post('/license/validate', {
+        config: { rateLimit: fastify.ratePolicies.refresh }
+    }, async (request, reply) => {
+        const { licenseKey, deviceIdHash } = ValidateSchema.parse(request.body);
+
+        const license = await prisma.license.findFirst({
+            where: { hashedKey: licenseKey }
+        });
+
+        if (!license) {
+            return reply.code(404).send({ error: 'License not found' });
+        }
+
+        if (license.status === LicenseStatus.REVOKED) {
+            return reply.code(403).send({ error: 'License revoked' });
+        }
+
+        if (license.status === LicenseStatus.EXPIRED || (license.expiresAt && isPast(license.expiresAt))) {
+            return reply.code(401).send({ error: 'License expired', hint: 'Please renew your license' });
+        }
+
+        if (!license.deviceIdHashes.includes(deviceIdHash)) {
+            return reply.code(401).send({ error: 'Unknown Device' });
+        }
+
+        return { status: 'valid', licenseStatus: license.status };
     });
 
     // POST /admin/license/revoke

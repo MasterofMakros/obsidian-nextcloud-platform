@@ -1,5 +1,51 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
+
+// Mock PrismaClient (Global instantiation in routes/license.ts causes failure without this)
+vi.mock("@prisma/client", () => {
+    return {
+        PrismaClient: class {
+            constructor() {
+                return {
+                    $disconnect: vi.fn(),
+                    license: {
+                        findFirst: vi.fn(),
+                        update: vi.fn()
+                    }
+                };
+            }
+        },
+        LicenseStatus: { ACTIVE: "ACTIVE", REVOKED: "REVOKED", EXPIRED: "EXPIRED" },
+        LicensePlan: { PRO: "PRO", FREE: "FREE" }
+    };
+});
+
+// Mock Redis
+vi.mock("ioredis", () => {
+    const EventEmitter = require("events");
+    return {
+        Redis: class extends EventEmitter {
+            status = 'ready';
+            constructor() {
+                super();
+                setTimeout(() => this.emit("ready"), 0);
+                this.quit = vi.fn().mockResolvedValue(undefined);
+                this.on = this.on.bind(this);
+                (this as any).defineCommand = vi.fn();
+            }
+        }
+    };
+});
+
+// Mock BullMQ
+vi.mock("bullmq", () => {
+    return { Queue: class { constructor() {} add = vi.fn(); } };
+});
+
+// Mock Stripe
+vi.mock("stripe", () => {
+    return { default: class { constructor() {} webhooks = { constructEvent: vi.fn() }; } };
+});
 
 // Adapt import to your server factory.
 // Must return FastifyInstance with .ready() and .close()
