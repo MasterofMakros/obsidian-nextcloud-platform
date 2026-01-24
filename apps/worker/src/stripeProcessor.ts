@@ -90,7 +90,7 @@ export const processStripeEventJob = async (args: { prisma: PrismaClient, job: a
             }
 
             case 'invoice.payment_failed': {
-                const invoice = data.object as Stripe.Invoice;
+                const invoice = data.object as any;
                 const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
                 console.log(`Payment failed for sub ${subscriptionId}`);
 
@@ -106,7 +106,7 @@ export const processStripeEventJob = async (args: { prisma: PrismaClient, job: a
             }
 
             case 'invoice.paid': {
-                const invoice = data.object as Stripe.Invoice;
+                const invoice = data.object as any;
                 const subscriptionId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
                 console.log(`Payment succeeded for sub ${subscriptionId}`);
 

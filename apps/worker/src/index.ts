@@ -13,7 +13,7 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const connection = { url: REDIS_URL };
 
 const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-12-15.clover' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-12-15.clover' as any });
 
 // --- Observability Setup ---
 const metrics = createWorkerMetrics();
