@@ -95,12 +95,13 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
      * POST /dashboard/licenses/:id/reset-devices
      * Reset device list for a license (self-service)
      */
-    fastify.post('/dashboard/licenses/:id/reset-devices', {
-        schema: {
-            params: z.object({ id: z.string().uuid() })
-        }
-    }, async (request: any, reply) => {
+    fastify.post('/dashboard/licenses/:id/reset-devices', async (request: any, reply) => {
         const { id } = request.params as { id: string };
+
+        // Validate UUID format
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+            return reply.code(400).send({ error: 'Invalid license ID format' });
+        }
 
         // Verify license belongs to user
         const license = await prisma.license.findFirst({
