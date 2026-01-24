@@ -3,8 +3,8 @@ import { z } from "zod";
 // Request schema
 export const AgentRunRequest = z.object({
     task: z.enum(["issue_intake", "analysis", "fix_proposal"]),
-    input: z.record(z.any()),
-    context: z.record(z.any()).optional(),
+    input: z.record(z.string(), z.any()),
+    context: z.record(z.string(), z.any()).optional(),
 });
 
 // Output schemas (strict)
