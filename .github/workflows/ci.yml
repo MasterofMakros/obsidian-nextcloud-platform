@@ -38,7 +38,7 @@ jobs:
       
     - name: Typecheck
       # Ensure all packages have a typecheck script or run tsc directly if simple
-      run: pnpm -r run typecheck --if-present
+      run: pnpm -r --if-present run typecheck
 
     # 3. Integration Infrastructure (Start early for tests)
     - name: Start Infrastructure
