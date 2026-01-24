@@ -194,7 +194,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
             }
 
             // Cancel at period end (don't immediately terminate)
-            await stripe.subscriptions.update(subscriptions.data[0].id, {
+            await getStripe().subscriptions.update(subscriptions.data[0].id, {
                 cancel_at_period_end: true
             });
 
@@ -221,7 +221,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
         }
 
         try {
-            const session = await stripe.billingPortal.sessions.create({
+            const session = await getStripe().billingPortal.sessions.create({
                 customer: user.stripeCustomerId,
                 return_url: `${returnUrl}/dashboard/billing`
             });
