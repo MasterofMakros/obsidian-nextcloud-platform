@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SiteFooter } from "@/components/SiteFooter";
 import { GitHubIcon } from "@/components/icons/GitHubIcon";
 import styles from "./page.module.css";
@@ -10,6 +11,11 @@ export default function Home() {
                 {/* Hero Section */}
                 <section className={styles.hero}>
                     <div className={styles.heroContent}>
+                        <div className={styles.logoGroup}>
+                            <Image src="/logo.svg" alt="Obsidian" width={64} height={64} className={styles.heroLogo} />
+                            <span className={styles.logoConnector}>+</span>
+                            <Image src="/nextcloud-logo.png" alt="Nextcloud" width={64} height={64} className={styles.heroLogo} />
+                        </div>
                         <h1 className={styles.title}>Your Second Brain. <br /> Now Sovereign.</h1>
                         <p className={styles.subtitle}>
                             Seamlessly sync media between Obsidian and Nextcloud. <br />
