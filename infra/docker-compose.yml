@@ -115,6 +115,64 @@ services:
       - "traefik.http.routers.web.rule=Host(`localhost`)"
       - "traefik.http.services.web.loadbalancer.server.port=3010"
 
+  # AI Gateway (n8n backend)
+  gateway:
+    build:
+      context: ../
+      dockerfile: apps/gateway/Dockerfile
+    container_name: onm-gateway
+    restart: always
+    environment:
+      - PORT=8080
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - GATEWAY_BEARER_TOKEN=${GATEWAY_BEARER_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    ports:
+      - "8080:8080"
+    networks:
+      - onm-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # n8n Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: onm-n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_USER:-admin}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      # Gateway connection
+      - AI_GATEWAY_URL=http://gateway:8080/v1/agent/run
+      - AI_GATEWAY_KEY=${GATEWAY_BEARER_TOKEN}
+      # GitHub integration
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_OWNER=${GITHUB_OWNER:-}
+      - GITHUB_REPO=${GITHUB_REPO:-}
+      # Support email
+      - SUPPORT_FROM_EMAIL=${SUPPORT_FROM_EMAIL:-}
+      - SUPPORT_AUTOACK_ENABLED=${SUPPORT_AUTOACK_ENABLED:-false}
+      - PUBLIC_SUPPORT_NAME=${PUBLIC_SUPPORT_NAME:-Support Team}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../docs/n8n:/home/node/workflows:ro
+    networks:
+      - onm-network
+    depends_on:
+      gateway:
+        condition: service_healthy
+
 networks:
   onm-network:
     driver: bridge
@@ -122,3 +180,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  n8n_data:
