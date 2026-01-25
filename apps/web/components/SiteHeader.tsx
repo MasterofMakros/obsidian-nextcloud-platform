@@ -30,6 +30,7 @@ export function SiteHeader() {
                         <GitHubIcon size={18} />
                         <span>GitHub</span>
                     </a>
+                    <Link href="/login" className={styles.loginButton}>Login</Link>
                 </nav>
             </div>
         </header>

@@ -70,3 +70,19 @@
     align-items: center;
     gap: var(--spacing-xs);
 }
+
+.loginButton {
+    background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary));
+    color: var(--color-text-on-accent);
+    text-decoration: none;
+    font-size: var(--typography-size-sm);
+    font-weight: var(--typography-weight-semibold);
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: var(--radius-md);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.loginButton:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
