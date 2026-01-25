@@ -14,7 +14,7 @@ export default function Home() {
                         <div className={styles.logoGroup}>
                             <Image src="/logo.svg" alt="Obsidian" width={64} height={64} className={styles.heroLogo} />
                             <span className={styles.logoConnector}>+</span>
-                            <Image src="/nextcloud-logo.png" alt="Nextcloud" width={64} height={64} className={styles.heroLogo} />
+                            <Image src="/nextcloud-logo.svg" alt="Nextcloud" width={64} height={64} className={styles.heroLogo} />
                         </div>
                         <h1 className={styles.title}>Your Second Brain. <br /> Now Sovereign.</h1>
                         <p className={styles.subtitle}>
