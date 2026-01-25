@@ -1,0 +1,20 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/Dockerfile.railway"
+
+[deploy]
+numReplicas = 1
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "gateway"
+port = 8080
+internalPort = 8080
+
+[[services]]
+name = "n8n"
+port = 5678
+internalPort = 5678

@@ -1,0 +1,167 @@
+{
+    "name": "Slack Support → AI Analysis → Thread Reply",
+    "nodes": [
+        {
+            "parameters": {
+                "channel": "#support",
+                "updates": [
+                    "message"
+                ]
+            },
+            "id": "slack_trigger",
+            "name": "Slack Trigger",
+            "type": "n8n-nodes-base.slackTrigger",
+            "typeVersion": 1,
+            "position": [
+                200,
+                200
+            ],
+            "credentials": {
+                "slackApi": {
+                    "id": "REPLACE_WITH_SLACK_CRED_ID",
+                    "name": "Slack Support Bot"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "functionCode": "const msg = items[0].json;\n\n// Skip bot messages\nif (msg.bot_id || msg.subtype === 'bot_message') {\n  return [];\n}\n\n// Extract message details\nconst text = msg.text || '';\nconst user = msg.user || 'unknown';\nconst channel = msg.channel || '';\nconst ts = msg.ts || '';\nconst thread_ts = msg.thread_ts || ts;\n\nreturn [{ json: { text, user, channel, ts, thread_ts } }];"
+            },
+            "id": "extract",
+            "name": "Extract Message",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                400,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL}}",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "task",
+                            "value": "issue_intake"
+                        },
+                        {
+                            "name": "input",
+                            "value": "={{JSON.stringify({ subject: 'Slack: ' + $json.text.slice(0, 50), text: $json.text, from: $json.user })}}"
+                        }
+                    ]
+                },
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "ai_analyze",
+            "name": "AI Analyze",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                600,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const analysis = items[0].json.output || items[0].json;\nconst original = $node['Extract Message'].json;\n\nconst emoji = {\n  bug: ':bug:',\n  feature: ':bulb:',\n  billing: ':moneybag:',\n  question: ':question:'\n};\n\nconst severityEmoji = {\n  critical: ':rotating_light:',\n  major: ':warning:',\n  minor: ':white_check_mark:'\n};\n\nconst reply = [\n  `${emoji[analysis.type] || ':robot_face:'} **AI Analysis**`,\n  '',\n  `• **Type:** ${analysis.type}`,\n  `• **Severity:** ${severityEmoji[analysis.severity] || ''} ${analysis.severity}`,\n  `• **Area:** ${analysis.area}`,\n  `• **Confidence:** ${Math.round((analysis.confidence || 0) * 100)}%`,\n  '',\n  `> ${analysis.summary}`\n].join('\\n');\n\nreturn [{ json: { ...original, reply, analysis } }];"
+            },
+            "id": "format_reply",
+            "name": "Format Reply",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "channel": "={{$json.channel}}",
+                "text": "={{$json.reply}}",
+                "otherOptions": {
+                    "thread_ts": "={{$json.thread_ts}}"
+                }
+            },
+            "id": "slack_reply",
+            "name": "Reply in Thread",
+            "type": "n8n-nodes-base.slack",
+            "typeVersion": 2,
+            "position": [
+                1000,
+                200
+            ],
+            "credentials": {
+                "slackApi": {
+                    "id": "REPLACE_WITH_SLACK_CRED_ID",
+                    "name": "Slack Support Bot"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Slack Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Message": {
+            "main": [
+                [
+                    {
+                        "node": "AI Analyze",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Analyze": {
+            "main": [
+                [
+                    {
+                        "node": "Format Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Reply": {
+            "main": [
+                [
+                    {
+                        "node": "Reply in Thread",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

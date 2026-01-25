@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import { randomUUID } from "crypto";
 import auth from "./auth.js";
+import webhookRoutes from "./routes/webhooks.js";
 import {
     AgentRunRequest,
     IssueIntakeOutput,
@@ -24,6 +25,9 @@ await app.register(rateLimit, { max: 60, timeWindow: "1 minute" });
 
 // Auth plugin
 await app.register(auth);
+
+// Webhook routes (GitHub, Slack)
+await app.register(webhookRoutes);
 
 // Health endpoints
 app.get("/health", async () => ({ status: "ok" }));
