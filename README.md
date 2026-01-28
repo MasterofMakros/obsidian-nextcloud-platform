@@ -90,7 +90,7 @@ graph TB
     subgraph "Backend Services"
         API[Fastify API Server<br/>Port 3011<br/>License Management]
         Worker[BullMQ Worker<br/>Port 9110<br/>Async Job Processing]
-        Gateway[AI Gateway<br/>n8n Integration]
+        Gateway[AI Gateway<br/>Port 8081<br/>n8n Integration]
     end
 
     subgraph "Data Layer"
@@ -159,75 +159,32 @@ graph TB
 
 ## 📁 Project Structure
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete project structure and architecture documentation.
+
+Quick overview:
 ```
-obsidian-nextcloud-platform/
-├── apps/
-│   ├── api/                      # 🔥 Fastify API Server
-│   │   ├── src/
-│   │   │   ├── index.ts          # Server bootstrap
-│   │   │   ├── routes/           # API endpoints (license, stripe, health)
-│   │   │   └── plugins/          # Fastify plugins (CORS, rate-limit, metrics)
-│   │   └── Dockerfile
-│   │
-│   ├── web/                      # 🌐 Next.js Frontend
-│   │   ├── app/                  # App Router pages
-│   │   │   ├── checkout/        # Stripe checkout flow
-│   │   │   ├── pricing/         # Pricing page
-│   │   │   └── docs/            # Documentation
-│   │   ├── components/          # Shared React components
-│   │   └── Dockerfile
-│   │
-│   ├── worker/                   # ⚙️ BullMQ Background Worker
-│   │   ├── src/
-│   │   │   ├── index.ts         # Worker entry point
-│   │   │   └── stripeProcessor.ts  # Idempotent webhook handler
-│   │   └── Dockerfile
-│   │
-│   ├── plugin/                   # 🔌 Obsidian Plugin
-│   │   ├── main.ts              # Plugin entry point
-│   │   ├── license.ts           # Offline Ed25519 verification
-│   │   └── manifest.json
-│   │
-│   └── gateway/                  # 🤖 AI Gateway (n8n)
-│       └── src/
-│
-├── packages/
-│   ├── db/                       # 🗄️ Prisma Schema & Migrations
-│   │   └── prisma/schema.prisma
-│   ├── design-tokens/            # 🎨 Shared CSS Variables
-│   └── config/                   # ⚙️ TypeScript Configs
-│
-├── infra/
-│   ├── docker-compose.yml        # Development setup
-│   └── stage/                    # Staging environment
-│
-├── docs/                         # 📚 Comprehensive Documentation
-│   ├── DEPLOYMENT.md
-│   ├── LICENSING.md
-│   ├── STRIPE_SETUP.md
-│   └── OBSERVABILITY.md
-│
-└── tests/                        # 🧪 Integration & E2E Tests
+apps/          # Applications (api, web, worker, gateway, plugin)
+packages/      # Shared packages (db, design-tokens, config)
+infra/         # Docker & deployment configs
+docs/          # Documentation
+tests/         # Integration & E2E tests
 ```
 
 ---
 
 ## 🔌 API Endpoints
 
-All endpoints are prefixed with `/api/v1/`:
+See [docs/API-SPEC.md](docs/API-SPEC.md) for complete API documentation with request/response examples.
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| **GET** | `/health` | Basic health check | ❌ |
-| **GET** | `/readyz` | Kubernetes readiness probe | ❌ |
-| **GET** | `/metrics` | Prometheus metrics | ❌ |
-| **POST** | `/license/activate` | Activate license on device | ✅ |
-| **POST** | `/license/verify` | Verify active license | ✅ |
-| **POST** | `/license/refresh` | Refresh license token | ✅ |
-| **POST** | `/license/deactivate` | Remove device from license | ✅ |
-| **POST** | `/stripe/webhook` | Stripe event handler | ✅ (Webhook signature) |
+Quick reference:
+- `GET /health` - Health check
+- `GET /readyz` - Readiness probe
+- `GET /metrics` - Prometheus metrics
+- `POST /license/activate` - Activate license
+- `POST /license/verify` - Verify license
+- `POST /stripe/webhook` - Stripe webhooks
 
-> 📖 **Full API Specification:** Check out [docs/openapi-licensing-v1.yaml](docs/openapi-licensing-v1.yaml) for the complete OpenAPI spec.
+> 📖 **Full API Specification:** See [docs/API-SPEC.md](docs/API-SPEC.md) or [docs/openapi-licensing-v1.yaml](docs/openapi-licensing-v1.yaml) for OpenAPI spec.
 
 ---
 
@@ -297,13 +254,16 @@ We've documented everything you need:
 
 | Document | What You'll Learn |
 |----------|-------------------|
+| **[00-INDEX.md](docs/00-INDEX.md)** | AI Assistant Entry Point - Start here! |
+| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | Complete system architecture and data flows |
+| **[API-SPEC.md](docs/API-SPEC.md)** | Full API specification with examples |
 | **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** | Infrastructure setup, Docker configs, rollback procedures |
 | **[LICENSING.md](docs/LICENSING.md)** | Ed25519 cryptographic protocol, offline verification |
 | **[STRIPE_SETUP.md](docs/STRIPE_SETUP.md)** | Stripe integration guide, webhook setup |
-| **[STRIPE_LIVE_CHECKLIST.md](docs/STRIPE_LIVE_CHECKLIST.md)** | Pre-launch checklist for going live with payments |
 | **[OBSERVABILITY.md](docs/OBSERVABILITY.md)** | Prometheus metrics, structured logging setup |
 | **[TESTING.md](docs/TESTING.md)** | Test strategy, writing tests, CI/CD integration |
-| **[PERFORMANCE_ANALYSIS.md](PERFORMANCE_ANALYSIS.md)** | Performance anti-patterns, optimization guide |
+| **[PERFORMANCE_ANALYSIS.md](docs/PERFORMANCE_ANALYSIS.md)** | Performance anti-patterns, optimization guide |
+| **[COLE_MEDIN_STYLE.md](docs/COLE_MEDIN_STYLE.md)** | Coding standards and best practices |
 
 ---
 
