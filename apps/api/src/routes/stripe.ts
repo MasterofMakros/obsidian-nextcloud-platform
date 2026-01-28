@@ -71,7 +71,10 @@ export async function stripeRoutes(fastify: FastifyInstance) {
             type: event.type,
             data: event.data
         }, {
-            jobId: event.id // Deduplication key for BullMQ (optional redundancy to DB check)
+            jobId: event.id, // Deduplication key for BullMQ (optional redundancy to DB check)
+            // CRITICAL: Prevent Redis memory leak - auto-cleanup jobs
+            removeOnComplete: { age: 3600, count: 1000 }, // Keep last 1000 jobs or 1 hour
+            removeOnFail: { age: 24 * 3600, count: 5000 } // Keep failed jobs for 24h for debugging
         });
 
         return { received: true };

@@ -42,7 +42,13 @@ export async function authRoutes(fastify: FastifyInstance) {
      * Send a magic link email to the user
      */
     fastify.post('/auth/magic-link', async (request, reply) => {
-        const { email } = MagicLinkSchema.parse(request.body);
+        let email;
+        try {
+            const body = MagicLinkSchema.parse(request.body);
+            email = body.email;
+        } catch (error) {
+            return reply.code(400).send({ error: 'Invalid email address' });
+        }
 
         // Generate token
         const token = generateToken();

@@ -26,8 +26,8 @@ const rateLimitPlugin: FastifyPluginAsync<RateLimitPluginOptions> = async (
         parseAllowlist(process.env.STRIPE_WEBHOOK_IP_ALLOWLIST);
 
     await fastify.register(rateLimit, {
-        // Redis store strongly recommended
-        redis,
+        // Redis store strongly recommended (disable in test to strictly test logic without mock complexity)
+        redis: process.env.NODE_ENV === 'test' ? undefined : redis,
         // Global default (very permissive, overridden per route)
         max: 600,
         timeWindow: "1 minute",

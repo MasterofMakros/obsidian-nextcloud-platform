@@ -1,0 +1,127 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../generated/client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LicenseStatus {
+  ACTIVE
+  PAST_DUE
+  GRACE
+  REVOKED
+  EXPIRED
+}
+
+enum LicensePlan {
+  FREE
+  PRO
+  LIFETIME
+}
+
+enum PaymentEventStatus {
+  PENDING
+  PROCESSED
+  FAILED
+}
+
+model User {
+  id               String  @id @default(uuid())
+  email            String  @unique
+  stripeCustomerId String? @unique
+
+  // Auth fields
+  emailVerified   DateTime?
+  magicLinkToken  String?
+  magicLinkExpiry DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  licenses  License[]
+  sessions  Session[]
+  accounts  Account[]
+  emailLogs EmailLog[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                String    @id @default(uuid())
+  userId            String
+  provider          String // "google" | "github" | "magic-link"
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model License {
+  id         String @id @default(uuid())
+  // Public key part for verification
+  publicKey  String @unique
+  // Hashed private key for issuance (never stored in plaintext)
+  hashedKey  String
+  keyVersion Int    @default(1)
+
+  userId String
+  status LicenseStatus @default(ACTIVE)
+  plan   LicensePlan   @default(PRO)
+
+  stripeSubscriptionId String?
+
+  features       Json // e.g. ["4k-streaming"]
+  deviceIdHashes String[] // List of authorized device hashes
+
+  expiresAt   DateTime?
+  graceEndsAt DateTime?
+
+  lastValidatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  emailLogs EmailLog[]
+}
+
+model PaymentEvent {
+  id          String             @id @default(uuid())
+  stripeId    String             @unique
+  type        String // e.g. "checkout.session.completed", "invoice.payment_failed"
+  payload     Json
+  status      PaymentEventStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  processedAt DateTime?
+  error       String?
+}
+
+// Tracks automated emails to prevent spam
+model EmailLog {
+  id        String   @id @default(uuid())
+  userId    String
+  licenseId String?
+  emailType String // "churn_7d", "churn_3d", "churn_1d", "dunning_1", "dunning_2", "dunning_3", "upsell"
+  sentAt    DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  license License? @relation(fields: [licenseId], references: [id], onDelete: SetNull)
+
+  @@index([userId, emailType])
+  @@index([licenseId])
+}

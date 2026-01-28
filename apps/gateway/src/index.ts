@@ -1,8 +1,11 @@
 import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
+import helmet from "@fastify/helmet";
 import { randomUUID } from "crypto";
 import auth from "./auth.js";
 import webhookRoutes from "./routes/webhooks.js";
+import revenueRoutes from "./routes/revenue.js";
+import supportRoutes from "./routes/support.js";
 import {
     AgentRunRequest,
     IssueIntakeOutput,
@@ -20,6 +23,21 @@ const app = Fastify({
     },
 });
 
+// Security headers with Helmet
+await app.register(helmet, {
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+        },
+    },
+});
+
 // Rate limiting
 await app.register(rateLimit, { max: 60, timeWindow: "1 minute" });
 
@@ -28,6 +46,12 @@ await app.register(auth);
 
 // Webhook routes (GitHub, Slack)
 await app.register(webhookRoutes);
+
+// Revenue protection routes (n8n automation)
+await app.register(revenueRoutes);
+
+// Support Automation routes
+await app.register(supportRoutes);
 
 // Health endpoints
 app.get("/health", async () => ({ status: "ok" }));

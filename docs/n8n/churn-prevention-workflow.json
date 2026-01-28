@@ -1,0 +1,370 @@
+{
+    "name": "Churn Prevention → License Renewal Reminders",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hour": 9
+                        }
+                    ]
+                }
+            },
+            "id": "cron_daily",
+            "name": "Daily 9AM",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                200,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/expiring-licenses?days=7",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        }
+                    ]
+                }
+            },
+            "id": "get_7d",
+            "name": "Get 7-Day Expiring",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                420,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/expiring-licenses?days=3",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        }
+                    ]
+                }
+            },
+            "id": "get_3d",
+            "name": "Get 3-Day Expiring",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                420,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/expiring-licenses?days=1",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        }
+                    ]
+                }
+            },
+            "id": "get_1d",
+            "name": "Get 1-Day Expiring",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                420,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const licenses = items[0].json.licenses || [];\nreturn licenses.map(lic => ({ json: { ...lic, emailType: 'churn_7d' } }));"
+            },
+            "id": "split_7d",
+            "name": "Split 7-Day",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                640,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const licenses = items[0].json.licenses || [];\nreturn licenses.map(lic => ({ json: { ...lic, emailType: 'churn_3d' } }));"
+            },
+            "id": "split_3d",
+            "name": "Split 3-Day",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                640,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const licenses = items[0].json.licenses || [];\nreturn licenses.map(lic => ({ json: { ...lic, emailType: 'churn_1d' } }));"
+            },
+            "id": "split_1d",
+            "name": "Split 1-Day",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                640,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'support@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.email}}",
+                "subject": "🔔 Deine Lizenz läuft in {{$json.daysRemaining}} Tagen ab",
+                "text": "Hallo!\n\nDeine {{$json.plan}}-Lizenz für das Obsidian Nextcloud Media Plugin läuft am {{new Date($json.expiresAt).toLocaleDateString('de-DE')}} ab.\n\n✅ Verlängere jetzt, um weiterhin alle Features zu nutzen:\nhttps://obsidian-nextcloud.com/dashboard/billing\n\nFragen? Antworte einfach auf diese E-Mail.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_7d",
+            "name": "Send 7-Day Reminder",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                860,
+                100
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Support SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'support@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.email}}",
+                "subject": "⚠️ Nur noch 3 Tage! – 10% Verlängerungs-Rabatt",
+                "text": "Hallo!\n\nDeine {{$json.plan}}-Lizenz läuft in 3 Tagen ab.\n\n🎁 Exklusiv für dich: 10% Rabatt auf die Verlängerung!\nCode: RENEW10\n\nJetzt verlängern:\nhttps://obsidian-nextcloud.com/dashboard/billing?coupon=RENEW10\n\nNach Ablauf verlierst du Zugang zu:\n• 4K Streaming\n• Multi-Device Sync\n• Priority Support\n\nFragen? Antworte einfach auf diese E-Mail.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_3d",
+            "name": "Send 3-Day Reminder",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                860,
+                300
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Support SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'support@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.email}}",
+                "subject": "🚨 Letzte Chance! Lizenz läuft MORGEN ab",
+                "text": "Hallo!\n\nDeine {{$json.plan}}-Lizenz läuft MORGEN ab.\n\nDas bedeutet:\n❌ Kein 4K Streaming mehr\n❌ Kein Multi-Device Sync\n❌ Nur noch Basis-Features\n\n👉 Jetzt verlängern (dauert 30 Sekunden):\nhttps://obsidian-nextcloud.com/dashboard/billing\n\nDein Rabattcode RENEW10 (10% Rabatt) ist noch gültig!\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_1d",
+            "name": "Send 1-Day Reminder",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                860,
+                500
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Support SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/log-email",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "userId",
+                            "value": "={{$json.userId}}"
+                        },
+                        {
+                            "name": "licenseId",
+                            "value": "={{$json.id}}"
+                        },
+                        {
+                            "name": "emailType",
+                            "value": "={{$json.emailType}}"
+                        }
+                    ]
+                }
+            },
+            "id": "log_email",
+            "name": "Log Email Sent",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1080,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Daily 9AM": {
+            "main": [
+                [
+                    {
+                        "node": "Get 7-Day Expiring",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Get 3-Day Expiring",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Get 1-Day Expiring",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get 7-Day Expiring": {
+            "main": [
+                [
+                    {
+                        "node": "Split 7-Day",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get 3-Day Expiring": {
+            "main": [
+                [
+                    {
+                        "node": "Split 3-Day",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get 1-Day Expiring": {
+            "main": [
+                [
+                    {
+                        "node": "Split 1-Day",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split 7-Day": {
+            "main": [
+                [
+                    {
+                        "node": "Send 7-Day Reminder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split 3-Day": {
+            "main": [
+                [
+                    {
+                        "node": "Send 3-Day Reminder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split 1-Day": {
+            "main": [
+                [
+                    {
+                        "node": "Send 1-Day Reminder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send 7-Day Reminder": {
+            "main": [
+                [
+                    {
+                        "node": "Log Email Sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send 3-Day Reminder": {
+            "main": [
+                [
+                    {
+                        "node": "Log Email Sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Send 1-Day Reminder": {
+            "main": [
+                [
+                    {
+                        "node": "Log Email Sent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

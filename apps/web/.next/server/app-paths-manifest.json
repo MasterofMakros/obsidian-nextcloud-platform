@@ -1,17 +1,18 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
   "/faq/page": "app/faq/page.js",
   "/checkout/success/page": "app/checkout/success/page.js",
   "/docs/page": "app/docs/page.js",
   "/login/verify/page": "app/login/verify/page.js",
-  "/login/page": "app/login/page.js",
   "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
   "/pricing/page": "app/pricing/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js",
-  "/legal/privacy/page": "app/legal/privacy/page.js",
-  "/dashboard/billing/page": "app/dashboard/billing/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/legal/terms/page": "app/legal/terms/page.js",
+  "/dashboard/billing/page": "app/dashboard/billing/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
   "/legal/eula/page": "app/legal/eula/page.js",
+  "/legal/privacy/page": "app/legal/privacy/page.js",
+  "/legal/terms/page": "app/legal/terms/page.js",
   "/legal/impressum/page": "app/legal/impressum/page.js"
 }

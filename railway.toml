@@ -5,7 +5,7 @@ dockerfilePath = "infra/Dockerfile.railway"
 [deploy]
 numReplicas = 1
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 

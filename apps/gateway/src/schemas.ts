@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Request schema
 export const AgentRunRequest = z.object({
-    task: z.enum(["issue_intake", "analysis", "fix_proposal"]),
+    task: z.enum(["issue_intake", "analysis", "fix_proposal", "support_chat"]),
     input: z.record(z.string(), z.any()),
     context: z.record(z.string(), z.any()).optional(),
 });
@@ -33,8 +33,15 @@ export const FixProposalOutput = z.object({
     pr_body: z.string().min(0).max(20000),
 });
 
+export const SupportChatOutput = z.object({
+    answer: z.string().min(1).max(20000),
+    confidence: z.number().min(0).max(1),
+    sources: z.array(z.string()).default([]),
+});
+
 // Type exports
 export type AgentRunRequestType = z.infer<typeof AgentRunRequest>;
 export type IssueIntakeOutputType = z.infer<typeof IssueIntakeOutput>;
 export type AnalysisOutputType = z.infer<typeof AnalysisOutput>;
 export type FixProposalOutputType = z.infer<typeof FixProposalOutput>;
+export type SupportChatOutputType = z.infer<typeof SupportChatOutput>;

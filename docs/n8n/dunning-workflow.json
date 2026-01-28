@@ -1,0 +1,313 @@
+{
+    "name": "Dunning → Failed Payment Recovery",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hour": 10
+                        }
+                    ]
+                }
+            },
+            "id": "cron_daily",
+            "name": "Daily 10AM",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/failed-payments",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        }
+                    ]
+                }
+            },
+            "id": "get_failed",
+            "name": "Get Failed Payments",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                420,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const payments = items[0].json.failedPayments || [];\nreturn payments.map(p => ({ json: p }));"
+            },
+            "id": "split_payments",
+            "name": "Split Payments",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                640,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.attemptCount}}",
+                            "operation": "equal",
+                            "value2": 1
+                        }
+                    ]
+                }
+            },
+            "id": "if_attempt_1",
+            "name": "IF Attempt 1?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                860,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.attemptCount}}",
+                            "operation": "equal",
+                            "value2": 2
+                        }
+                    ]
+                }
+            },
+            "id": "if_attempt_2",
+            "name": "IF Attempt 2?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                860,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'billing@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.customerEmail}}",
+                "subject": "⚠️ Zahlung fehlgeschlagen – bitte prüfe deine Karte",
+                "text": "Hallo!\n\nWir konnten deine letzte Zahlung ({{($json.amountDue / 100).toFixed(2)}} {{$json.currency.toUpperCase()}}) nicht verarbeiten.\n\nDas kann passieren, wenn:\n• Die Karte abgelaufen ist\n• Das Limit erreicht wurde\n• Die Bank die Transaktion blockiert hat\n\n👉 Bitte aktualisiere deine Zahlungsmethode:\nhttps://obsidian-nextcloud.com/dashboard/billing\n\nDein Account bleibt vorerst aktiv. Sollte die nächste Zahlung ebenfalls fehlschlagen, müssen wir deinen Zugang einschränken.\n\nFragen? Antworte einfach auf diese E-Mail.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_attempt_1",
+            "name": "Email: First Warning",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                100
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Billing SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'billing@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.customerEmail}}",
+                "subject": "🚨 Zweiter Zahlungsversuch fehlgeschlagen – Account gefährdet",
+                "text": "Hallo!\n\nLeider ist auch der zweite Zahlungsversuch ({{($json.amountDue / 100).toFixed(2)}} {{$json.currency.toUpperCase()}}) fehlgeschlagen.\n\n⚠️ Dein Account wird in 2 Tagen eingeschränkt, wenn wir keine erfolgreiche Zahlung erhalten.\n\nBitte aktualisiere JETZT deine Zahlungsmethode:\nhttps://obsidian-nextcloud.com/dashboard/billing\n\nAlternativ kannst du uns auch direkt kontaktieren, um eine Lösung zu finden.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_attempt_2",
+            "name": "Email: Second Warning",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                300
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Billing SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'billing@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.customerEmail}}",
+                "subject": "❌ Letzter Versuch fehlgeschlagen – Lizenz deaktiviert",
+                "text": "Hallo!\n\nNach mehreren fehlgeschlagenen Zahlungsversuchen wurde deine Lizenz leider deaktiviert.\n\n❌ Du hast jetzt nur noch Zugang zu Basis-Features.\n\nUm wieder vollen Zugang zu erhalten:\n1. Aktualisiere deine Zahlungsmethode\n2. Kontaktiere uns für manuelle Reaktivierung\n\nhttps://obsidian-nextcloud.com/dashboard/billing\n\nWir möchten dich gerne als Kunden behalten. Antworte auf diese E-Mail, wenn du Hilfe brauchst.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_attempt_3",
+            "name": "Email: Final Notice",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                500
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Billing SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/mark-payment-processed",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "eventId",
+                            "value": "={{$json.id}}"
+                        }
+                    ]
+                }
+            },
+            "id": "mark_processed",
+            "name": "Mark Processed",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1320,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Daily 10AM": {
+            "main": [
+                [
+                    {
+                        "node": "Get Failed Payments",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Failed Payments": {
+            "main": [
+                [
+                    {
+                        "node": "Split Payments",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Payments": {
+            "main": [
+                [
+                    {
+                        "node": "IF Attempt 1?",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "IF Attempt 2?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Attempt 1?": {
+            "main": [
+                [
+                    {
+                        "node": "Email: First Warning",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "IF Attempt 2?": {
+            "main": [
+                [
+                    {
+                        "node": "Email: Second Warning",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Email: Final Notice",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email: First Warning": {
+            "main": [
+                [
+                    {
+                        "node": "Mark Processed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email: Second Warning": {
+            "main": [
+                [
+                    {
+                        "node": "Mark Processed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email: Final Notice": {
+            "main": [
+                [
+                    {
+                        "node": "Mark Processed",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

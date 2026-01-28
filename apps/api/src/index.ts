@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cookie from '@fastify/cookie';
@@ -25,7 +26,7 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const SERVICE_NAME = 'api';
 
 // 3. Register Core Plugins
-export const buildApp = async () => {
+export const buildApp = async (opts?: { prisma?: PrismaClient, redis?: Redis }) => {
     // 1. Dependency Initialization (inside factory to avoid side-effects in tests if needed, 
     // or keep global if you want shared singleton. For integration tests, shared singleton is usually fine 
     // BUT fastify instance should be fresh.)
@@ -58,8 +59,8 @@ export const buildApp = async () => {
     });
 
     // Instantiate Dependencies
-    const prisma = new PrismaClient();
-    const redis = new Redis(REDIS_URL);
+    const prisma = opts?.prisma || new PrismaClient();
+    const redis = opts?.redis || new Redis(REDIS_URL);
 
     // Graceful Shutdown
     app.addHook('onClose', async (instance) => {

@@ -18,13 +18,17 @@ RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 RUN pnpm build
 
 # Production
-FROM base AS runner
+FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build /app/apps/gateway/dist ./dist
 COPY --from=build /app/apps/gateway/package.json ./package.json
-RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
-RUN pnpm install --prod --frozen-lockfile
+# Copy both root and gateway node_modules for hoisted dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/gateway/node_modules ./apps_node_modules
+# Merge them (gateway deps override root deps)
+RUN cp -r ./apps_node_modules/* ./node_modules/ 2>/dev/null || true && rm -rf ./apps_node_modules
 
 EXPOSE 8080
 CMD ["node", "dist/index.js"]
+

@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-01-28T22:30:00Z",
+  "version": "1.0.0",
+  "metrics": {
+    "structure": {
+      "total_files": 124,
+      "typescript_files": 124,
+      "test_files": 21,
+      "documentation_files": 68,
+      "apps_count": 5,
+      "packages_count": 4,
+      "files_over_250_lines": 1,
+      "files_over_250_lines_list": [
+        "apps/api/src/__tests__/license.activate.integration.test.ts (261 lines)"
+      ]
+    },
+    "code_quality": {
+      "todo_count": 6,
+      "todo_files": [
+        "apps/api/src/routes/license.ts: TODO - Load from secure secret storage",
+        "apps/api/src/routes/license.ts: TODO - Check AdminApiKey Header (2x)",
+        "apps/gateway/src/tasks/analysis.ts: TODO - Wire up LLM",
+        "apps/plugin/main.ts: TODO - Fetch from /api/v1/license/activate",
+        "apps/plugin/license.ts: TODO - Replace with real public key"
+      ],
+      "fixme_count": 0,
+      "hack_count": 0
+    },
+    "documentation": {
+      "readme_coverage": "100%",
+      "md_files": 68,
+      "has_claude_md": true,
+      "has_deployment_docs": true,
+      "has_testing_docs": true
+    },
+    "dependencies": {
+      "outdated": "unknown - npm outdated skipped",
+      "security_issues": "unknown - npm audit skipped"
+    },
+    "docker": {
+      "status": "offline",
+      "services": 0,
+      "note": "Docker Desktop not running"
+    }
+  },
+  "scores": {
+    "structure": 95,
+    "documentation": 90,
+    "code_quality": 85,
+    "test_coverage": 80,
+    "docker_readiness": 0,
+    "overall": 70
+  },
+  "recommendations": [
+    "Start Docker Desktop for full stack testing",
+    "Resolve 6 TODOs in codebase",
+    "Run npm audit to check for security issues",
+    "Add E2E tests with Playwright",
+    "Consider splitting license.activate.integration.test.ts if it grows further"
+  ]
+}

@@ -3,22 +3,25 @@
     "version": "1.0.0",
     "private": true,
     "scripts": {
-        "dev": "next dev -p 3010",
-        "build": "next build",
+        "dev": "next dev -p 3010 --webpack",
+        "dev:turbo": "next dev -p 3010",
+        "build": "next build --webpack",
         "start": "next start -p 3010",
-        "lint": "next lint",
+        "lint": "eslint .",
         "typecheck": "tsc --noEmit",
         "test": "echo 'No unit tests yet' && exit 0",
-        "e2e": "playwright test"
+        "e2e": "playwright test",
+        "test:e2e": "playwright test --reporter=list"
     },
     "dependencies": {
         "@onm/config": "workspace:*",
         "@onm/design-tokens": "workspace:*",
-        "next": "15.5.9",
-        "react": "^19.2.3",
-        "react-dom": "^19.2.3"
+        "next": "16.1.5",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4"
     },
     "devDependencies": {
+        "@axe-core/playwright": "^4.11.0",
         "@playwright/test": "^1.57.0",
         "@types/node": "^20.0.0",
         "@types/react": "^19.2.9",

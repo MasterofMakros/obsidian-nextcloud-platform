@@ -1,0 +1,251 @@
+{
+    "name": "Upsell Engine → FREE to PRO Conversion",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "weeks",
+                            "triggerAtDay": [
+                                1
+                            ]
+                        }
+                    ]
+                }
+            },
+            "id": "cron_weekly",
+            "name": "Every Monday 10AM",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/upsell-candidates",
+                "method": "GET",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        }
+                    ]
+                }
+            },
+            "id": "get_candidates",
+            "name": "Get Upsell Candidates",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                420,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const candidates = items[0].json.candidates || [];\nreturn candidates.map(c => ({ json: c }));"
+            },
+            "id": "split_candidates",
+            "name": "Split Candidates",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 2,
+            "position": [
+                640,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{$json.deviceCount}}",
+                            "operation": "largerEqual",
+                            "value2": 4
+                        }
+                    ]
+                }
+            },
+            "id": "if_high_usage",
+            "name": "IF High Usage (4+ Devices)?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                860,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'hello@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.email}}",
+                "subject": "🚀 Du nutzt {{$json.deviceCount}} Geräte – Zeit für PRO! (20% Rabatt)",
+                "text": "Hallo!\n\nWow, du nutzt das Obsidian Nextcloud Media Plugin auf {{$json.deviceCount}} Geräten! Das zeigt, dass es ein wichtiger Teil deines Workflows ist. 💪\n\nMit dem FREE-Plan bist du fast am Limit. Mit PRO bekommst du:\n\n✅ Unbegrenzte Geräte\n✅ 4K Video Streaming\n✅ Priority Support\n✅ Früher Zugang zu neuen Features\n\n🎁 Exklusiv für Power-User wie dich:\n20% Rabatt mit Code: POWERUSER20\n\n👉 Jetzt upgraden:\nhttps://obsidian-nextcloud.com/pricing?coupon=POWERUSER20\n\nAngebot gültig für 7 Tage.\n\nViele Grüße\nDein Obsidian Nextcloud Team\n\nP.S.: Dieser Rabatt ist der höchste, den wir anbieten!",
+                "options": {}
+            },
+            "id": "email_high_usage",
+            "name": "Email: High Usage Offer",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                200
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Marketing SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "={{$env.SUPPORT_FROM_EMAIL || 'hello@obsidian-nextcloud.com'}}",
+                "toEmail": "={{$json.email}}",
+                "subject": "💡 Hol mehr aus deinem Plugin raus – 15% Rabatt auf PRO",
+                "text": "Hallo!\n\nDu nutzt das Obsidian Nextcloud Media Plugin jetzt seit {{$json.accountAgeDays}} Tagen. Zeit für ein Upgrade?\n\nMit PRO bekommst du:\n\n✅ Mehr Geräte\n✅ 4K Video Streaming  \n✅ Priority Support\n✅ Früher Zugang zu neuen Features\n\n🎁 15% Rabatt mit Code: UPGRADE15\n\n👉 Jetzt upgraden:\nhttps://obsidian-nextcloud.com/pricing?coupon=UPGRADE15\n\nAngebot gültig für 14 Tage.\n\nViele Grüße\nDein Obsidian Nextcloud Team",
+                "options": {}
+            },
+            "id": "email_normal_usage",
+            "name": "Email: Standard Offer",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                400
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "REPLACE_WITH_SMTP_CRED_ID",
+                    "name": "Marketing SMTP"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "url": "={{$env.AI_GATEWAY_URL.replace('/v1/agent/run', '')}}/v1/revenue/log-email",
+                "method": "POST",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{'Bearer ' + $env.AI_GATEWAY_KEY}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "userId",
+                            "value": "={{$json.userId}}"
+                        },
+                        {
+                            "name": "licenseId",
+                            "value": "={{$json.licenseId}}"
+                        },
+                        {
+                            "name": "emailType",
+                            "value": "upsell"
+                        }
+                    ]
+                }
+            },
+            "id": "log_email",
+            "name": "Log Upsell Email",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                1320,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Every Monday 10AM": {
+            "main": [
+                [
+                    {
+                        "node": "Get Upsell Candidates",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Get Upsell Candidates": {
+            "main": [
+                [
+                    {
+                        "node": "Split Candidates",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Split Candidates": {
+            "main": [
+                [
+                    {
+                        "node": "IF High Usage (4+ Devices)?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF High Usage (4+ Devices)?": {
+            "main": [
+                [
+                    {
+                        "node": "Email: High Usage Offer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Email: Standard Offer",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email: High Usage Offer": {
+            "main": [
+                [
+                    {
+                        "node": "Log Upsell Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Email: Standard Offer": {
+            "main": [
+                [
+                    {
+                        "node": "Log Upsell Email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "versionId": "1"
+}

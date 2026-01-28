@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
 
-// Mock PrismaClient (Global instantiation in routes/license.ts causes failure without this)
+// Mock PrismaClient
 vi.mock("@prisma/client", () => {
     return {
         PrismaClient: class {
@@ -39,16 +39,14 @@ vi.mock("ioredis", () => {
 
 // Mock BullMQ
 vi.mock("bullmq", () => {
-    return { Queue: class { constructor() {} add = vi.fn(); } };
+    return { Queue: class { constructor() { } add = vi.fn(); } };
 });
 
 // Mock Stripe
 vi.mock("stripe", () => {
-    return { default: class { constructor() {} webhooks = { constructEvent: vi.fn() }; } };
+    return { default: class { constructor() { } webhooks = { constructEvent: vi.fn() }; } };
 });
 
-// Adapt import to your server factory.
-// Must return FastifyInstance with .ready() and .close()
 import { buildApp } from "../index";
 
 describe("P1-5 Hardening - Integration", () => {
@@ -56,8 +54,6 @@ describe("P1-5 Hardening - Integration", () => {
 
     beforeAll(async () => {
         process.env.CORS_ALLOW_ORIGINS = "https://allowed.example";
-        // Ensure rate limit store works for tests; if you require redis, run these in CI with redis.
-        // If your app hard-requires Redis, keep as-is; CI will provide it.
         app = await buildApp();
         await app.ready();
     });
@@ -85,11 +81,6 @@ describe("P1-5 Hardening - Integration", () => {
         const res = await request(app.server)
             .get("/health")
             .set("Origin", "https://evil.example");
-
-        // Depending on @fastify/cors behavior, it may:
-        // - not set access-control-allow-origin
-        // - or error out based on your implementation
-        // Adjust to your actual behavior:
         expect(res.headers["access-control-allow-origin"]).toBeUndefined();
     });
 
@@ -97,19 +88,14 @@ describe("P1-5 Hardening - Integration", () => {
         const res = await request(app.server)
             .get("/health")
             .set("Origin", "https://allowed.example");
-
-        // Should explicitly allow
         expect(res.headers["access-control-allow-origin"]).toBe("https://allowed.example");
     });
 
     it("rate limits /license/activate (expects 429 after exceeding)", async () => {
-        // If you require a body, provide a minimal payload.
         const payload = { licenseKey: "test", deviceIdHash: "test" };
 
-        // Hit multiple times; tune count to your activate policy (e.g., 20/min).
         let last = null as any;
         for (let i = 0; i < 50; i++) {
-            // Need to provide minimal valid body schema for zod or else 400 Bad Request
             last = await request(app.server)
                 .post("/license/activate")
                 .send(payload)
@@ -118,6 +104,10 @@ describe("P1-5 Hardening - Integration", () => {
         }
 
         expect(last).not.toBeNull();
+        if (last.status !== 429) {
+            console.log("Last response status:", last.status);
+            console.log("Last response body:", JSON.stringify(last.body, null, 2));
+        }
         expect(last.status).toBe(429);
     });
 });
