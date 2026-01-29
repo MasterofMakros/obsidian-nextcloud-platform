@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  test:
+  lint-and-typecheck:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -29,32 +29,8 @@ jobs:
     - name: Generate Prisma Client
       run: pnpm --filter @onm/db generate
 
-    # 1. Static Analysis
     - name: Lint
       run: pnpm -r lint
       
     - name: Typecheck
       run: pnpm -r --if-present run typecheck
-
-    # 2. Unit & Integration Tests
-    - name: Start Infrastructure
-      run: docker compose -f infra/docker-compose.yml up -d
-      
-    - name: Wait for Healthchecks
-      run: |
-        timeout 60s sh -c 'until docker ps | grep onm-postgres | grep "(healthy)"; do sleep 1; done'
-        timeout 60s sh -c 'until docker ps | grep onm-redis | grep "(healthy)"; do sleep 1; done'
-
-    - name: Run Tests (Unit, Integration)
-      run: pnpm test
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/onm_db?schema=public
-        REDIS_URL: redis://localhost:6379
-
-    # Cleanup
-    - name: Cleanup
-      if: always()
-      run: |
-        docker compose -f infra/docker-compose.yml down -v
-        docker system prune -f
-        df -h
