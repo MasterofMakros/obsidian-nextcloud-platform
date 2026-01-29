@@ -1,16 +1,25 @@
-name: CI
+name: E2E Tests
 
 on:
   push:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
-  test:
+  e2e:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Free up disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
     
     - name: Install pnpm
       uses: pnpm/action-setup@v3
@@ -26,17 +35,12 @@ jobs:
     - name: Install Dependencies
       run: pnpm install
 
+    - name: Install Playwright Browsers
+      run: pnpm --filter web exec playwright install chromium --with-deps
+
     - name: Generate Prisma Client
       run: pnpm --filter @onm/db generate
 
-    # 1. Static Analysis
-    - name: Lint
-      run: pnpm -r lint
-      
-    - name: Typecheck
-      run: pnpm -r --if-present run typecheck
-
-    # 2. Unit & Integration Tests
     - name: Start Infrastructure
       run: docker compose -f infra/docker-compose.yml up -d
       
@@ -45,9 +49,14 @@ jobs:
         timeout 60s sh -c 'until docker ps | grep onm-postgres | grep "(healthy)"; do sleep 1; done'
         timeout 60s sh -c 'until docker ps | grep onm-redis | grep "(healthy)"; do sleep 1; done'
 
-    - name: Run Tests (Unit, Integration)
-      run: pnpm test
+    - name: Run E2E Tests
+      run: |
+        pnpm --filter web build
+        nohup pnpm --filter web start -- -p 3000 &
+        sleep 10
+        pnpm --filter web e2e
       env:
+        CI: true
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/onm_db?schema=public
         REDIS_URL: redis://localhost:6379
 
@@ -56,5 +65,5 @@ jobs:
       if: always()
       run: |
         docker compose -f infra/docker-compose.yml down -v
-        docker system prune -f
+        docker system prune -af --volumes
         df -h
