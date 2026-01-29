@@ -209,6 +209,21 @@ pnpm --filter api run test:watch
 
 ---
 
+## 🔄 CI/CD Workflows
+
+We use GitHub Actions for continuous integration and deployment:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **CI** | Push, PR | Lint & Typecheck |
+| **Deploy** | Push | Docker Build & Push to GHCR |
+| **E2E Tests** | PR, Manual | End-to-end tests with Playwright |
+| **Integration Tests** | Daily, Manual | Full test suite with Docker |
+
+All workflows are optimized to avoid disk space issues on GitHub Actions runners.
+
+---
+
 ## 🚀 Deployment
 
 ### Docker (Recommended)
