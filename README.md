@@ -1,14 +1,6 @@
 # Obsidian Nextcloud Media Platform
 
-> Privacy-first media sync platform with offline Ed25519 licensing. Production-ready architecture for bridging Obsidian and Nextcloud.
-
-A full-stack, production-ready solution with **offline-first licensing**, **Ed25519 cryptographic signatures**, and **zero "phone home" requirements**. Your data stays on your devices—period.
-
-## Prerequisites
-
-- **Node.js 18+** with [pnpm](https://pnpm.io/) (`npm install -g pnpm`)
-- **Docker** and **Docker Compose** (for PostgreSQL and Redis)
-- **Git** (optional, for cloning)
+> Privacy-first media sync with offline Ed25519 licensing. Production-ready architecture bridging Obsidian, Nextcloud, and n8n automation.
 
 ## Quick Start
 
@@ -26,61 +18,57 @@ pnpm install
 docker compose up -d postgres redis
 ```
 
-This spins up PostgreSQL and Redis in the background.
-
 ### 3. Start Development Services
 
-Open three terminals:
+Open four terminals:
 
 ```bash
-# Terminal 1: API Server
+# Terminal 1: API Server (Port 3011)
 pnpm --filter api run dev
-# → http://localhost:3011
 
-# Terminal 2: Background Worker
+# Terminal 2: Worker (Port 9110)
 pnpm --filter worker run dev
-# → http://localhost:9110/metrics
 
-# Terminal 3: Web Frontend
+# Terminal 3: Gateway (Port 8081)
+pnpm --filter gateway run dev
+
+# Terminal 4: Web Frontend (Port 3010)
 pnpm --filter web run dev
-# → http://localhost:3010
 ```
 
 ### 4. Open the App
 
-Navigate to **http://localhost:3010** and you're live!
+Navigate to **http://localhost:3010**
 
-> 💡 **Pro Tip:** API docs available at `http://localhost:3011/docs`
+> 💡 API docs: `http://localhost:3011/docs`
 
 ## Architecture
 
 ```
-┌─────────────────┐                      ┌─────────────────┐
-│   Next.js 14    │                      │  Obsidian Plugin│
-│   Port 3010     │                      │  (Offline ED25519
-└────────┬────────┘                      │   Verification) │
-         │                              └─────────────────┘
-         │ HTTP/JSON                              │
-         ▼                                        │
-┌─────────────────┐                      ┌────────┴────────┐
-│   Traefik RP    │                      │   Fastify API   │
-│   HTTPS/TLS     │◄────────────────────►│   Port 3011     │
-└─────────────────┘                      └────────┬────────┘
-                                                  │
-         ┌────────────────────────────────────────┤
-         │                                        │
-┌────────▼────────┐                      ┌────────▼────────┐
-│  BullMQ Worker  │                      │   AI Gateway    │
-│   Port 9110     │                      │   Port 8081     │
-└────────┬────────┘                      └─────────────────┘
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Next.js 14    │     │  Obsidian Plugin│     │      n8n        │
+│   Port 3010     │     │  (Offline Auth) │     │  (Automation)   │
+└────────┬────────┘     └─────────────────┘     └────────┬────────┘
+         │                                              │
+         │ HTTP/JSON                                    │ Webhooks
+         ▼                                              ▼
+┌─────────────────┐                           ┌─────────────────┐
+│   Traefik RP    │◄─────────────────────────►│   AI Gateway    │
+│   HTTPS/TLS     │                           │   Port 8081     │
+└────────┬────────┘                           └─────────────────┘
          │
-         │ Queue/Cache
-         ▼
-┌─────────────────┐     ┌─────────────────┐
-│   PostgreSQL    │     │      Redis      │
-│   Port 5432     │     │    Port 6379    │
-│  (License Data) │     │  (Job Queue)    │
-└─────────────────┘     └─────────────────┘
+         ├───────────────────────────────────────────────┐
+         │                                               │
+┌────────▼────────┐                            ┌────────▼────────┐
+│  Fastify API    │                            │  BullMQ Worker  │
+│   Port 3011     │                            │   Port 9110     │
+└────────┬────────┘                            └────────┬────────┘
+         │                                               │
+         ▼                                               ▼
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   PostgreSQL    │     │      Redis      │     │     Stripe      │
+│   Port 5432     │     │    Port 6379    │     │   (Payments)    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
 ```
 
 ### Tech Stack
@@ -88,148 +76,160 @@ Navigate to **http://localhost:3010** and you're live!
 | Layer | Technology |
 |-------|------------|
 | Frontend | Next.js 14, React 18, CSS Modules |
-| API Backend | Fastify, TypeScript, Zod |
-| Background Jobs | BullMQ, Redis |
+| API | Fastify, TypeScript, Zod |
+| Worker | BullMQ, Redis |
+| Gateway | Fastify, AI/n8n integration |
 | Database | PostgreSQL 15, Prisma |
-| Authentication | ED25519 Signatures (offline) |
-| Payments | Stripe Checkout |
-| Observability | Prometheus, Pino |
+| Auth | ED25519 Signatures (offline) |
+| Payments | Stripe |
+| Automation | n8n |
+| Monitoring | Prometheus, Pino |
 
-### Project Structure
+## Services
 
-```
-obsidian-nextcloud-platform/
-├── apps/
-│   ├── api/                    # Fastify API
-│   │   ├── src/routes/         # API endpoints (max 250 lines)
-│   │   ├── src/plugins/        # Fastify plugins
-│   │   └── src/lib/            # Business logic
-│   ├── web/                    # Next.js 14
-│   │   ├── app/                # App Router
-│   │   ├── components/         # React components
-│   │   └── e2e/                # Playwright tests
-│   ├── worker/                 # BullMQ processor
-│   ├── gateway/                # AI/n8n integration
-│   └── plugin/                 # Obsidian plugin
-├── packages/
-│   ├── db/                     # Prisma schema & client
-│   └── design-tokens/          # Shared CSS variables
-├── infra/
-│   └── docker-compose.yml      # Local development
-└── docs/                       # Documentation
-```
+| Service | Port | Purpose |
+|---------|------|---------|
+| Web | 3010 | Next.js dashboard |
+| API | 3011 | License & user management |
+| Worker | 9110 | Background job processing |
+| Gateway | 8081 | AI/n8n integration hub |
 
 ## Features
 
-- **Offline-First Licensing** — ED25519 signatures verified locally. No internet needed for daily use.
-- **Swiss-Engineered Privacy** — Your media stays on YOUR devices. Zero data collection.
-- **Stripe Integration** — Subscription management with automatic license provisioning. Idempotent webhooks.
-- **Production-Ready Security** — Rate limiting, CORS, security headers, Zod validation.
-- **Full Observability** — Prometheus metrics, structured JSON logging, health checks.
-- **Modern Tech Stack** — Next.js 14, Fastify, TypeScript, Prisma, BullMQ.
+- **Offline Licensing** — ED25519 signatures verified locally
+- **Swiss Privacy** — Zero data collection
+- **Stripe Integration** — Automatic license provisioning
+- **n8n Automation** — Revenue protection, support bots
+- **Obsidian Plugin** — Native integration with offline verification
+- **Production Security** — Rate limiting, CORS, Zod validation
 
-## API Endpoints
+## n8n Automation Workflows
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/readyz` | Readiness probe |
-| GET | `/metrics` | Prometheus metrics |
-| POST | `/api/v1/license/activate` | Activate license |
-| POST | `/api/v1/license/verify` | Verify license |
-| POST | `/api/v1/license/refresh` | Refresh token |
-| POST | `/stripe/webhook` | Stripe webhooks |
-
-Full API documentation at `http://localhost:3011/docs` when backend is running.
-
-## CI/CD Workflows
+Located in `docs/n8n/`. Import into your n8n instance:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| CI | Push, PR | Lint & Typecheck |
-| Deploy | Push | Docker build & push to GHCR |
-| E2E Tests | PR, Manual | Playwright E2E tests |
-| Integration | Daily, Manual | Full test suite with Docker |
+| **Churn Prevention** | Daily 9AM | License renewal reminders (7d, 3d, 1d before expiry) |
+| **Dunning** | Daily 10AM | Failed payment recovery (3 escalating emails) |
+| **Upsell Engine** | Weekly Monday | FREE to PRO conversion offers |
+| **Support Bot** | Email/Slack | AI knowledge base responses (RAG) |
+| **Support Intake** | IMAP Email | Auto-classify issues, create GitHub issues |
+| **Slack Support** | #support channel | Real-time AI analysis with emoji classification |
+| **AI Fix Orchestrator** | Every 5min | Monitor GitHub for AI-fix requests |
+
+### Gateway Revenue API
+
+Endpoints consumed by n8n workflows:
+
+| Endpoint | Method | Usage |
+|----------|--------|-------|
+| `/v1/revenue/expiring-licenses` | GET | Churn prevention queries |
+| `/v1/revenue/failed-payments` | GET | Dunning campaign data |
+| `/v1/revenue/upsell-candidates` | GET | Upsell targeting |
+| `/v1/revenue/log-email` | POST | Track email campaigns |
+| `/v1/agent/support-chat` | POST | Support bot RAG queries |
+
+## API Endpoints
+
+Full API documentation at `http://localhost:3011/docs`
+
+Key endpoints: `/health`, `/api/v1/license/activate`, `/api/v1/license/verify`, `/stripe/webhook`
+
+## Obsidian Plugin
+
+### Installation
+
+1. Build the plugin:
+```bash
+pnpm --filter plugin build
+```
+
+2. Copy `main.js` and `manifest.json` to your Obsidian vault:
+```bash
+# Path: .obsidian/plugins/obsidian-nextcloud-media/
+cp apps/plugin/main.js ~/.obsidian/plugins/obsidian-nextcloud-media/
+cp apps/plugin/manifest.json ~/.obsidian/plugins/obsidian-nextcloud-media/
+```
+
+3. Enable in Obsidian Settings → Community Plugins
+
+### Usage
+
+The plugin verifies licenses **offline** using ED25519 signatures. No internet required for daily use.
+
+## CI/CD
+
+- **CI:** Lint & Typecheck (Push, PR)
+- **Deploy:** Docker build to GHCR (Push)
+- **E2E Tests:** Playwright (PR, Manual)
+- **Integration:** Full suite (Daily, Manual)
 
 ## Testing
 
 ```bash
-# Run all tests
+# All tests
 pnpm test
 
-# Test specific services
-pnpm --filter api run test         # API unit tests
-pnpm --filter worker run test      # Worker unit tests
-pnpm --filter web run test:e2e     # E2E tests with Playwright
+# Specific services
+pnpm --filter api run test
+pnpm --filter worker run test
+pnpm --filter web run test:e2e
 
-# Check coverage
+# Coverage
 pnpm test:coverage
 ```
 
-**Coverage Requirements:**
-- API/Worker: 80% statements, 75% branches
-- Database: 70% statements
-- Web: 60% statements
+**Requirements:** API/Worker 80%, Database 70%, Web 60%
 
 ## Development Standards
 
-### File Size Limit
-**Maximum 250 lines per file.**
+- **File Size:** Max 250 lines per file
+- **Naming:** kebab-case files, PascalCase components, UPPER_SNAKE_CASE constants
+- **Testing:** 80% coverage for API/Worker
+
+See [COLE_MEDIN_STYLE.md](docs/COLE_MEDIN_STYLE.md) for full standards.
+
+## Deployment
 
 ```bash
-# Check file sizes
-find apps/ packages/ -name "*.ts" -o -name "*.tsx" | \
-  xargs wc -l | sort -n | tail -20
+# Build and deploy
+docker compose -f infra/stage/docker-compose.stage.yml build
+docker compose -f infra/stage/docker-compose.stage.yml up -d
 ```
 
-### Naming Conventions
+### Environment Variables
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Files | kebab-case | `license-validator.ts` |
-| Components | PascalCase | `LicenseCard.tsx` |
-| Functions | camelCase | `validateLicense()` |
-| Constants | UPPER_SNAKE_CASE | `MAX_DEVICE_COUNT` |
-| Types | PascalCase | `interface LicenseConfig` |
+Copy `.env.example` in each app directory. Required vars: `DATABASE_URL`, `REDIS_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `ED25519_PRIVATE_KEY`, `AI_GATEWAY_KEY`.
 
-### Verification Commands
-
-```bash
-# Code quality
-pnpm -r run lint
-pnpm -r run typecheck
-
-# Check file sizes
-find apps/ -name "*.ts" | xargs wc -l | awk '$1 > 250'
-
-# Security scan
-pnpm audit
-```
+> ⚠️ Never commit `.env` files.
 
 ## Documentation
 
 | Document | Content |
 |----------|---------|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture & data flows |
-| [API-SPEC.md](docs/API-SPEC.md) | API endpoints & OpenAPI spec |
-| [COLE_MEDIN_STYLE.md](docs/COLE_MEDIN_STYLE.md) | Coding standards & best practices |
-| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker deployment guide |
-| [LICENSING.md](docs/LICENSING.md) | Ed25519 protocol & offline verification |
-| [TESTING.md](docs/TESTING.md) | Test strategy & examples |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture |
+| [API-SPEC.md](docs/API-SPEC.md) | API specification |
+| [COLE_MEDIN_STYLE.md](docs/COLE_MEDIN_STYLE.md) | Coding standards |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment guide |
+| [LICENSING.md](docs/LICENSING.md) | ED25519 protocol |
+| [TESTING.md](docs/TESTING.md) | Test strategy |
 
-## Environment Variables
+## Troubleshooting
 
-Copy `.env.example` in each app directory:
+| Issue | Solution |
+|-------|----------|
+| License verification fails | Check `ED25519_PRIVATE_KEY` matches public key |
+| Gateway connection refused | Ensure Gateway service is running on port 8081 |
+| n8n workflows fail | Check `AI_GATEWAY_URL` and `AI_GATEWAY_KEY` env vars |
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection |
-| `REDIS_URL` | Yes | Redis connection |
-| `STRIPE_SECRET_KEY` | Yes | Stripe API key |
-| `STRIPE_WEBHOOK_SECRET` | Yes | Webhook signing secret |
-| `ED25519_PRIVATE_KEY` | Yes | License signing key |
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed solutions.
 
-> ⚠️ Never commit `.env` files to version control.
+## Contributing
+
+1. Fork and create branch: `git checkout -b feature/name`
+2. Ensure tests pass: `pnpm test`
+3. Commit: `git commit -m 'feat: description'`
+4. Push and open PR
 
 ## License
 
