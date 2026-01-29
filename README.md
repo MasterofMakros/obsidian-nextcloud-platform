@@ -44,32 +44,58 @@ Navigate to **http://localhost:3010**
 
 ## Architecture
 
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Web["🌐 Next.js 14<br/>Port 3010"]
+        Plugin["📓 Obsidian Plugin<br/>(Offline ED25519)"]
+    end
+
+    subgraph "Automation Layer"
+        N8N["⚡ n8n<br/>Workflow Engine"]
+    end
+
+    subgraph "API Layer"
+        Gateway["🤖 AI Gateway<br/>Port 8081"]
+        API["🔌 Fastify API<br/>Port 3011"]
+    end
+
+    subgraph "Processing Layer"
+        Worker["⚙️ BullMQ Worker<br/>Port 9110"]
+    end
+
+    subgraph "Data Layer"
+        Postgres["🗄️ PostgreSQL<br/>Port 5432"]
+        Redis["📦 Redis<br/>Port 6379"]
+    end
+
+    subgraph "External Services"
+        Stripe["💳 Stripe<br/>Payments"]
+    end
+
+    Web -->|"HTTP/JSON"| API
+    Plugin -->|"License Verify"| API
+    N8N -->|"Webhooks"| Gateway
+    Gateway -->|"Revenue API"| API
+    API -->|"Read/Write"| Postgres
+    API -->|"Queue Jobs"| Redis
+    Worker -->|"Process Jobs"| Redis
+    Worker -->|"Update Status"| Postgres
+    API -->|"Payment API"| Stripe
+    Gateway -.->|"AI Tasks"| Worker
+
+    style Web fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style API fill:#68a063,stroke:#333,stroke-width:2px,color:#fff
+    style Gateway fill:#9b59b6,stroke:#333,stroke-width:2px,color:#fff
+    style Worker fill:#f39c12,stroke:#333,stroke-width:2px,color:#000
+    style Postgres fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    style Redis fill:#dc382d,stroke:#333,stroke-width:2px,color:#fff
+    style N8N fill:#ff6d5a,stroke:#333,stroke-width:2px,color:#fff
+    style Stripe fill:#635bff,stroke:#333,stroke-width:2px,color:#fff
+    style Plugin fill:#7c3aed,stroke:#333,stroke-width:2px,color:#fff
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Next.js 14    │     │  Obsidian Plugin│     │      n8n        │
-│   Port 3010     │     │  (Offline Auth) │     │  (Automation)   │
-└────────┬────────┘     └─────────────────┘     └────────┬────────┘
-         │                                              │
-         │ HTTP/JSON                                    │ Webhooks
-         ▼                                              ▼
-┌─────────────────┐                           ┌─────────────────┐
-│   Traefik RP    │◄─────────────────────────►│   AI Gateway    │
-│   HTTPS/TLS     │                           │   Port 8081     │
-└────────┬────────┘                           └─────────────────┘
-         │
-         ├───────────────────────────────────────────────┐
-         │                                               │
-┌────────▼────────┐                            ┌────────▼────────┐
-│  Fastify API    │                            │  BullMQ Worker  │
-│   Port 3011     │                            │   Port 9110     │
-└────────┬────────┘                            └────────┬────────┘
-         │                                               │
-         ▼                                               ▼
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   PostgreSQL    │     │      Redis      │     │     Stripe      │
-│   Port 5432     │     │    Port 6379    │     │   (Payments)    │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
+
+**Zoom:** Use mouse wheel or pinch gesture to zoom in/out
 
 ### Tech Stack
 
