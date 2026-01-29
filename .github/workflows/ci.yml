@@ -27,7 +27,7 @@ jobs:
       run: pnpm install
 
     - name: Install Playwright Browsers
-      run: pnpm --filter web exec playwright install --with-deps
+      run: pnpm --filter web exec playwright install chromium --with-deps
 
     - name: Generate Prisma Client
       run: pnpm --filter @onm/db generate
@@ -56,7 +56,14 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/onm_db?schema=public
         REDIS_URL: redis://localhost:6379
 
-        
+    # Cleanup: Free disk space after tests
+    - name: Cleanup Docker and temporary files
+      if: always()
+      run: |
+        docker compose -f infra/docker-compose.yml down -v
+        docker system prune -f
+        rm -rf node_modules/.cache
+
     # 4. E2E Tests
     - name: Run E2E Tests
       # Note: This requires the web app to be running. 
@@ -69,3 +76,12 @@ jobs:
         pnpm --filter web e2e
       env:
         CI: true
+
+    # Final Cleanup
+    - name: Final Cleanup
+      if: always()
+      run: |
+        docker compose -f infra/docker-compose.yml down -v 2>/dev/null || true
+        docker system prune -af --volumes
+        rm -rf ~/.cache/pnpm
+        df -h
