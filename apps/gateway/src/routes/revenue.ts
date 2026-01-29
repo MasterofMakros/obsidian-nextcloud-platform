@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
-import { prisma } from "@onm/db";
+import { prisma, License, EmailLog, PaymentEvent } from "@onm/db";
 import { z } from "zod";
 
 /**
@@ -65,15 +65,15 @@ const revenueRoutes: FastifyPluginAsync = async (app) => {
         // Filter out licenses that already received this reminder
         const emailTypeForDays = days <= 1 ? "churn_1d" : days <= 3 ? "churn_3d" : "churn_7d";
 
-        const filtered = licenses.filter((lic) => {
-            const alreadySent = lic.emailLogs.some((log) => log.emailType === emailTypeForDays);
+        const filtered = licenses.filter((lic: License & { emailLogs: EmailLog[] }) => {
+            const alreadySent = lic.emailLogs.some((log: EmailLog) => log.emailType === emailTypeForDays);
             return !alreadySent;
         });
 
         return reply.send({
             count: filtered.length,
             emailType: emailTypeForDays,
-            licenses: filtered.map((lic) => ({
+            licenses: filtered.map((lic: License & { user: { email: string } }) => ({
                 id: lic.id,
                 userId: lic.userId,
                 email: lic.user.email,
@@ -101,7 +101,7 @@ const revenueRoutes: FastifyPluginAsync = async (app) => {
         });
 
         // Extract relevant info from Stripe payload
-        const results = failedPayments.map((event) => {
+        const results = failedPayments.map((event: PaymentEvent) => {
             const payload = event.payload as Record<string, unknown>;
             const invoice = (payload.data as Record<string, unknown>)?.object as Record<string, unknown> || {};
 
@@ -154,7 +154,7 @@ const revenueRoutes: FastifyPluginAsync = async (app) => {
         });
 
         // Filter: high usage + no recent upsell email
-        const filtered = candidates.filter((lic) => {
+        const filtered = candidates.filter((lic: License & { emailLogs: EmailLog[] }) => {
             const deviceCount = lic.deviceIdHashes?.length || 0;
             const recentUpsell = lic.emailLogs.length > 0;
             return deviceCount >= 3 && !recentUpsell;
@@ -162,7 +162,7 @@ const revenueRoutes: FastifyPluginAsync = async (app) => {
 
         return reply.send({
             count: filtered.length,
-            candidates: filtered.map((lic) => ({
+            candidates: filtered.map((lic: License & { user: { email: string } }) => ({
                 licenseId: lic.id,
                 userId: lic.userId,
                 email: lic.user.email,
