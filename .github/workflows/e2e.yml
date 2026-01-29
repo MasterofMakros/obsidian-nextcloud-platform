@@ -1,8 +1,6 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -11,15 +9,17 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    
     - name: Free up disk space
       run: |
         sudo rm -rf /usr/share/dotnet
         sudo rm -rf /opt/ghc
         sudo rm -rf "/usr/local/share/boost"
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        sudo apt-get clean
+        docker system prune -af --volumes
         df -h
+    
+    - uses: actions/checkout@v4
     
     - name: Install pnpm
       uses: pnpm/action-setup@v3
@@ -60,7 +60,6 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/onm_db?schema=public
         REDIS_URL: redis://localhost:6379
 
-    # Cleanup
     - name: Cleanup
       if: always()
       run: |
